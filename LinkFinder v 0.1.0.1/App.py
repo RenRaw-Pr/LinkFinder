@@ -1,8 +1,11 @@
-from PIL import Image, ImageTk
+import os
+from PIL import Image
 import tkinter
+from tkinter import filedialog as fd
 import customtkinter
 from Libs import Check_phase_func as cp
 from Libs import Config_func as conf
+
 
 class App(customtkinter.CTk):
     # Основные параметры приложения / main parametres of app
@@ -20,7 +23,7 @@ class App(customtkinter.CTk):
         
         # Привязываем быстрые сочетания для главного окна
         self.keyboard_bind()
-        '''
+        
         # Проверка версий драйверов
         versions = cp.find_drivers(cp.try_driver_last_version())
         if versions[0] == "warning":
@@ -28,7 +31,6 @@ class App(customtkinter.CTk):
             'Не найден драйвер подходящей версии,\n'+
             'возможна работа только c базой данных.'+
             '\n \nВерсия вашего браузера: '+ versions[1], skip_button='True')
-        '''
     #============================================================================================================
     # Технические функции 
     # Функция присвоения главных параметров / main parametres function
@@ -37,6 +39,8 @@ class App(customtkinter.CTk):
         self.config_data = conf.get_config()
         #(применяем сохраненную конфигурацию)
         customtkinter.set_appearance_mode(self.config_data['USER_SETTINGS']['theme'])
+
+        self.text_colors = ("#4682B4", "#FFFAFA")
 
         self.APP_WIDTH = 780
         self.APP_HEIGHT = 520
@@ -91,36 +95,37 @@ class App(customtkinter.CTk):
 # Класс основной левой группы виджетов / class of left frame
 class Left_main(customtkinter.CTkFrame):
     def __init__(self, master):
-        super().__init__(master, width=220, corner_radius=0, bg_color=None)
+        super().__init__(master, width=220, corner_radius=0, bg_color="transparent")
         self.main_opt = Options_list(self).pack(padx=5, pady=5)
-        self.serch_opt = Search_options(self).pack(padx=5, pady=5)
-        self.save_opt = Save_options(self).pack(padx=5, pady=5, expand=True, fill='y')
+        self.serch_opt = Search_options(self, master.text_colors).pack(padx=5, pady=5)
+        self.save_opt = Save_options(self, master.text_colors).pack(padx=5, pady=5, expand=True, fill='y')
 
 # Класс виджета поисковой строки / class of search frame
 class Search(customtkinter.CTkFrame):
     def __init__(self, master):
-        super().__init__(master, height=40, corner_radius=10, bg_color=None)       
-        search_img = ImageTk.PhotoImage(Image.open('./Design/icon-search-outline.png'))
-        clear_img = ImageTk.PhotoImage(Image.open('./Design/icon-cross-outline.png'))
+        super().__init__(master, height=40, corner_radius=10, bg_color="transparent")       
+        self.search_img = customtkinter.CTkImage(Image.open('./Design/icon-search-outline.png'), size=(15,15))
+        self.clear_img = customtkinter.CTkImage(Image.open('./Design/icon-cross-outline.png'))
         self.entry = customtkinter.CTkEntry(self, placeholder_text=None,
                                             height=30,
                                             corner_radius=8, border_width=1)
         self.entry.pack(side=tkinter.LEFT, expand=True, fill='x', padx=5, pady=5)
 
-        self.clear_button = customtkinter.CTkButton(self, image=clear_img,
+        self.clear_button = customtkinter.CTkButton(self, image=self.clear_img,
                                                     height=30, width=30,
                                                     corner_radius=8, border_width=1,
-                                                    border_color='#0267A7', fg_color=None, bg_color=None,
+                                                    border_color='#0267A7', fg_color="transparent", bg_color="transparent",
                                                     text=None,
                                                     command=self.clear)
         self.clear_button.pack(side=tkinter.LEFT, padx=(0, 5), pady=5)
         master.bind('<Control-n>', lambda event : self.clear())
-        self.search_button = customtkinter.CTkButton(self, image=search_img,
+        self.search_button = customtkinter.CTkButton(self, image=self.search_img,
                                                     height=30, width=40,
                                                     corner_radius=8, border_width=1,
-                                                    border_color='#0267A7', fg_color=None, bg_color=None,
+                                                    border_color='#0267A7', fg_color="transparent", bg_color="transparent",
                                                     compound="right",
                                                     text="Найти",
+                                                    text_color='#0267A7',
                                                     command=None)
         self.search_button.pack(side=tkinter.RIGHT, padx=(0, 5), pady=5)
         master.bind('<Return>', lambda event : self.clear())
@@ -145,58 +150,140 @@ class Result_and_save(tkinter.PanedWindow):
 class Options_list(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master, width=200, height=40, corner_radius=10)
-        self.settings_img = ImageTk.PhotoImage(Image.open('./Design/icon-settings-outline.png'))
+        self.settings_img = customtkinter.CTkImage(Image.open('./Design/icon-settings-outline.png'), size=(15,15))
+        self.hover_color = ('#B0AFB1','#515152')
+
         def settings():
-            Options(master.master)
+            self.opt = Options(master.master)
+            self.opt.grab_set()
 
         self.button_1 = customtkinter.CTkButton(self, 
                                                 image=self.settings_img,
                                                 height=30, width=30,
                                                 corner_radius=8, border_width=1,
-                                                border_color='#0267A7', fg_color=None, bg_color=None,
-                                                text=None,                                                  
-                                                command=settings)
-        self.button_1.place(x=5, y=5)
+                                                border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
+                                                text=None,                              
+                                                command=settings,
+                                                )
+        self.button_1.pack(padx=5, pady=5, side="left")
         
         self.button_2 = customtkinter.CTkButton(self,
                                                 height=30, width=30,
                                                 corner_radius=8, border_width=1,
-                                                border_color='#0267A7', fg_color=None, bg_color=None,
+                                                border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
                                                 text='',
                                                 state=tkinter.DISABLED)
-        self.button_2.place(x=40, y=5)
+        self.button_2.pack(padx=0, pady=5, side="left")
 
         self.button_3 = customtkinter.CTkButton(self,
-                                                height=30, width=30,
+                                                height=30, width=120,
                                                 corner_radius=8, border_width=1,
-                                                border_color='#0267A7', fg_color=None, bg_color=None,
+                                                border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
                                                 text='',
                                                 state=tkinter.DISABLED)
-        self.button_3.place(x=75, y=5)
-
-        self.button_4 = customtkinter.CTkButton(self,
-                                                height=30, width=85,
-                                                corner_radius=8, border_width=1,
-                                                border_color='#0267A7', fg_color=None, bg_color=None,
-                                                text='',
-                                                state=tkinter.DISABLED)
-        self.button_4.place(x=110, y=5)
+        self.button_3.pack(padx=5, pady=5, side="left", expand=True)
 
 # Класс виджета настроек поиска / search settings widget class
 class Search_options(customtkinter.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master, width=200, height=400, corner_radius=10)
+    def __init__(self, master, text_colors):
+        super().__init__(master, width=200, height=500, corner_radius=10)
+        
+        self.namebox = customtkinter.CTkLabel(self, text="Настройки поиска", font=("Arial", 14),
+                                                width=190, height=30,
+                                                text_color=text_colors)
+        self.namebox.grid(column=0, row=0, padx=5, pady=0, sticky="n")
+
+        self.parse_switch = customtkinter.CTkSwitch(self, text="Парсинг",
+                                                    command=lambda: self.parse_switch_func())
+        self.parse_switch.grid(column=0, row=1, padx=5, pady=5, sticky="w")
+
+        self.database_switch = customtkinter.CTkSwitch(self, text="Поиск по базе",
+                                                    command=lambda: self.database_switch_func())
+        self.database_switch.grid(column=0, row=2, padx=5, pady=5, sticky="w")
+
+        self.temporary_base_switch = customtkinter.CTkSwitch(self, text="Временная база",
+                                                    command=lambda: self.temporary_base_func())
+        self.temporary_base_switch.grid(column=0, row=3, padx=5, pady=5, sticky="w")
+
+        self.namebox_2 = customtkinter.CTkLabel(self, text="Создание временной \nбазы данных из файла",
+                                                width=190, height=30,
+                                                text_color=text_colors)
+        self.namebox_2.grid(column=0, row=4, padx=5, pady=5, sticky="n")
+        
+        self.check_last_database()
+        self.file_choose_button = customtkinter.CTkButton(self, text=self.button_text,
+                                                            width=190, height=20,
+                                                            text_color=text_colors,
+                                                            command=lambda: self.create_temporary_database())
+        self.file_choose_button.grid(column=0, row=5, padx=5, pady=5, sticky="w")
+
+    def check_last_database(self):
+        self.file_name = self.master.master.config_data['SEARCH_SETTINGS']['temporary_base']
+        if self.file_name == "":
+            self.button_text = "Выбрать файл"
+        else:
+            self.button_text = "Выбрано: " + self.file_name
+
+    def parse_switch_func(self):
+        if self.parse_switch.get():
+            print("parser toggle")
+    
+    def database_switch_func(self):
+        if self.database_switch.get():
+            print("basa toggle")
+    
+    def temporary_base_func(self):
+        if self.temporary_base_switch.get():
+            print("time toggle")
+
+    def create_temporary_database(self):
+        self.file_path = fd.askopenfilename()
+        self.file_name = os.path.basename(self.file_path)
+        if len(self.file_name)>12:
+            self.file_name = self.file_name[:13]+"..."
+        if self.file_name != "":
+            self.file_choose_button.configure(text="Выбрано: " + self.file_name)
+            self.master.master.config_data['SEARCH_SETTINGS']['temporary_base'] = self.file_name
+            conf.set_config(self.master.master)    
 
 # Класс виджета настроек сохранения в файл / save to file widget class
 class Save_options(customtkinter.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, text_colors):
         super().__init__(master, width=200, corner_radius=10)
+        self.namebox = customtkinter.CTkLabel(self, text="Настройки сохранения",
+                                                width=190, height=30,
+                                                text_color=text_colors)
+        self.namebox.grid(column=0, row=0, padx=5, pady=0, sticky="n")
+
+        self.file_choose_button = customtkinter.CTkButton(self, text="Выбрать файл",
+                                                            width=190, height=20,
+                                                            text_color=text_colors)
+        self.file_choose_button.grid(column=0, row=1, padx=5, pady=5, sticky="w")
 
 # Класс виджета вывода данных / result data frame class
 class Result_data(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master, height=400, corner_radius=10)
+        
+        if master.master.config_data['USER_SETTINGS']['theme']=='Dark':
+            self.info_bg_color = "#2B2B2B"
+        if master.master.config_data['USER_SETTINGS']['theme']=='Light':
+            self.info_bg_color = "#DBDBDB"
 
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        
+        self.infobox = tkinter.Canvas(self, bg=self.info_bg_color,  highlightthickness=0)
+        self.infobox.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+
+        self.scrollbar = customtkinter.CTkScrollbar(self, orientation="vertical",
+                                                    width=15, corner_radius=5, border_spacing=2,
+                                                    minimum_pixel_length=30,
+                                                    hover=True,
+                                                    command=self.infobox.yview)
+        self.scrollbar.grid(row=0, column=1, padx=5, pady=5, sticky="ns")
+        self.infobox.configure(yscrollcommand=self.scrollbar.set)
+        
 # Класс виджета сохранения данных в файл / save to file format frame class
 class Save_to_file(customtkinter.CTkFrame):
     def __init__(self, master):
@@ -212,7 +299,8 @@ class Messange(customtkinter.CTkToplevel):
         self.title(title)
         self.resizable(width=False, height=False)
         self.attributes('-topmost', 'true')
-        
+        self.font = customtkinter.CTkFont(family="Avenir Next", size=12, weight='normal')
+
         self.frame = customtkinter.CTkFrame(self, 
                                         width=master.MSG_WIDTH-20, 
                                         height=master.MSG_HEIGHT-20, 
@@ -220,17 +308,19 @@ class Messange(customtkinter.CTkToplevel):
         self.frame.pack(padx=10, pady=10)
         self.frame.pack_propagate(0)
         
-        self.img = ImageTk.PhotoImage(Image.open('./Design/icon-' + cl + '-outline.png'))
+        self.img = customtkinter.CTkImage(Image.open('./Design/icon-' + cl + '-outline.png'), size=(70,66))
         self.icon_warning = customtkinter.CTkLabel(self.frame,
                                                     width=70,
                                                     height=70,
+                                                    text="",
                                                     image=self.img)
-        self.icon_warning.grid(row=0, column=0, padx=10, pady=10)
+        self.icon_warning.grid(row=0, column=0, padx=10, pady=0, sticky="W")
 
-        self.text = customtkinter.CTkLabel(self.frame, width=300,height=160, 
-                                            text=msg, text_font=("Roboto Medium", -12),
+        self.text = customtkinter.CTkLabel(self.frame,
+                                            width=master.MSG_WIDTH-130,height=master.MSG_HEIGHT-20, 
+                                            text=msg, #text_font=self.font,
                                             justify=tkinter.LEFT)
-        self.text.grid(row=0, column=1, padx=0, pady=10, sticky='w')
+        self.text.grid(row=0, column=1, padx=10, pady=0, sticky="N")
 
         if skip_button == 'True': 
             if cl == 'warning':
@@ -243,8 +333,8 @@ class Messange(customtkinter.CTkToplevel):
                                                     width=50, height=20, 
                                                     border_width=2, corner_radius=8, 
                                                     text="Пропустить",
-                                                    text_font=("Roboto Medium", -12),
-                                                    border_color=self.color, text_color=self.color, fg_color=None, bg_color=None, hover_color=None,
+                                                    #text_font=self.font,
+                                                    border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
                                                     command=self.destroy)
             self.bind('<Return>', self.destroy)
             self.button.place(anchor='se', x=master.MSG_WIDTH-25, y=master.MSG_HEIGHT-25)
@@ -335,6 +425,10 @@ class Options(customtkinter.CTkToplevel):
         self.bind('<Control-d>', lambda event : self.default_button_func())
         self.bind('<Control-q>', lambda event : self.destroy())
 
+# Класс модуля в окне результатов
+class Info_module(customtkinter.CTkFrame):
+    def __init__(self, master, data):
+        super().__init__(master, height=60, corner_radius=10)
 
 # Запуск приложения / Start app
 if __name__ == "__main__":
