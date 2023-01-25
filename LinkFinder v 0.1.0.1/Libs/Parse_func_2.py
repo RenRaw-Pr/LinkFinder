@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium_stealth import stealth
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,7 +14,7 @@ def get_links(html):
     result_links = []
     for link in soup.find_all(class_='Link Link_theme_normal OrganicTitle-Link organic__url link i-bem'):
         result_links.append(link.get('href'))
-    return result_links
+    print(result_links)
 
 
 def parse_site(url, driver):
@@ -52,9 +53,8 @@ def start_parse(search):
     #chrome_options.add_argument("--headless")
     chrome_options.add_argument('--disable-notifications')
     chrome_options.add_argument('window-size=1920x1080')
-
+    chrome_options.add_argument("user-data-dir=C:\\/Users/Dima/Library/Application Support/Google/Chrome/Default")
     driver = webdriver.Chrome(path+'/chromedriver_v109', options=chrome_options)
-    
     # Делаем запрос в поисковую машину
     driver.get(browser_url)
     search_line = driver.find_element(By.XPATH, "//input[@id='text'][@name='text']")
@@ -64,10 +64,7 @@ def start_parse(search):
     search_button.click()
 
     # Считываем ссылки из результата поиска и проверяем текст на каждой из них
-    parse_result = []
     for link in get_links(driver.page_source):
-        parse_result.append(parse_site(link, driver))
-    #driver.quit()
-    return(parse_result)
+        parse_site(link, driver)
 
 start_parse("пгу")
