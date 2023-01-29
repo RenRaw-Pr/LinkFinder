@@ -1,10 +1,14 @@
 import os
+from typing import Union, Callable
+
 from PIL import Image
 import tkinter
 from tkinter import filedialog as fd
 import customtkinter
+
 from Libs import Check_phase_func as cp
-from Libs import Config_func as conf
+from Libs import Config_func as config
+from Libs import Data_func as db
 
 
 class App(customtkinter.CTk):
@@ -14,7 +18,7 @@ class App(customtkinter.CTk):
         self.params()
         self.find_center()
 
-        self.title('| LinkFinder v 0.1.0.1 |')
+        self.title('| LinkFinder v 0.1.0.2 |')
         self.geometry(f"{self.APP_WIDTH}x{self.APP_HEIGHT}+{int(self.X_APP)}+{int(self.Y_APP)}")
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -36,7 +40,8 @@ class App(customtkinter.CTk):
     # Функция присвоения главных параметров / main parametres function
     def params(self):
         #(подгружаем данные из файла конфигурации)
-        self.config_data = conf.get_config()
+        self.database = db.Database()
+        self.config_data = config.get_config()
         #(применяем сохраненную конфигурацию)
         customtkinter.set_appearance_mode(self.config_data['USER_SETTINGS']['theme'])
 
@@ -78,6 +83,7 @@ class App(customtkinter.CTk):
     
     # Функция закрытия приложения / app closing function
     def on_closing(self, event=0):
+        self.database.close_connection()
         self.destroy()
     
     # Функция привязки нажатия клавиш и их сочетаний / keyboard bind function
@@ -188,7 +194,7 @@ class Search_options(customtkinter.CTkFrame):
     def __init__(self, master, text_colors):
         super().__init__(master, width=200, height=500, corner_radius=10)
         
-        self.namebox = customtkinter.CTkLabel(self, text="Настройки поиска", font=("Arial", 14),
+        self.namebox = customtkinter.CTkLabel(self, text="Настройки поиска", font=("Arial", 12),
                                                 width=190, height=30,
                                                 text_color=text_colors)
         self.namebox.grid(column=0, row=0, padx=5, pady=0, sticky="n")
@@ -205,7 +211,7 @@ class Search_options(customtkinter.CTkFrame):
                                                     command=lambda: self.temporary_base_func())
         self.temporary_base_switch.grid(column=0, row=3, padx=5, pady=5, sticky="w")
 
-        self.namebox_2 = customtkinter.CTkLabel(self, text="Создание временной \nбазы данных из файла",
+        self.namebox_2 = customtkinter.CTkLabel(self, text="Создание временной \nбазы данных из файла", font=("Arial", 12),
                                                 width=190, height=30,
                                                 text_color=text_colors)
         self.namebox_2.grid(column=0, row=4, padx=5, pady=5, sticky="n")
@@ -244,7 +250,7 @@ class Search_options(customtkinter.CTkFrame):
         if self.file_name != "":
             self.file_choose_button.configure(text="Выбрано: " + self.file_name)
             self.master.master.config_data['SEARCH_SETTINGS']['temporary_base'] = self.file_name
-            conf.set_config(self.master.master)    
+            config.set_config(self.master.master)    
 
 # Класс виджета настроек сохранения в файл / save to file widget class
 class Save_options(customtkinter.CTkFrame):
@@ -293,12 +299,14 @@ class Save_to_file(customtkinter.CTkFrame):
 # Классы для создания дополнительных окон     
 # Класс уведомлений [cl = 'warning', 'info', 'error'] / messange class [cl = 'warning', 'info', 'error']
 class Messange(customtkinter.CTkToplevel):
-    def __init__(self, master, cl, title, msg, skip_button=None):
+    def __init__(self, master, cl, title, msg, skip_button=None, confirm_button=None, decline_button=None):
         super().__init__(master)
         self.geometry(f"{master.MSG_WIDTH}x{master.MSG_HEIGHT}+{int(master.X_MSG)}+{int(master.Y_MSG)}")
         self.title(title)
         self.resizable(width=False, height=False)
         self.attributes('-topmost', 'true')
+
+        self.flag = None
         self.font = customtkinter.CTkFont(family="Avenir Next", size=12, weight='normal')
 
         self.frame = customtkinter.CTkFrame(self, 
@@ -337,9 +345,50 @@ class Messange(customtkinter.CTkToplevel):
                                                     border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
                                                     command=self.destroy)
             self.bind('<Return>', self.destroy)
-            self.button.place(anchor='se', x=master.MSG_WIDTH-25, y=master.MSG_HEIGHT-25)
-            
+            self.button.grid(row=1, column=1, padx=25, pady=25, stycky="se")
+        
+        if confirm_button == 'True': 
+            if cl == 'warning':
+                self.color = '#FFDE3B'
+            if cl == 'error':
+                self.color = '#FB0406'
+            if cl == 'info':
+                self.color = '#03ACC7'
+            self.button = customtkinter.CTkButton(self.frame,
+                                                    width=50, height=20, 
+                                                    border_width=2, corner_radius=8, 
+                                                    text="Принять",
+                                                    #text_font=self.font,
+                                                    border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
+                                                    command=self.confirm_func)
+            self.bind('<Return>', self.confirm_func)
+            self.button.grid(row=1, column=1, padx=25, pady=25, stycky="se")
+
+        if decline_button == 'True': 
+            if cl == 'warning':
+                self.color = '#FFDE3B'
+            if cl == 'error':
+                self.color = '#FB0406'
+            if cl == 'info':
+                self.color = '#03ACC7'
+            self.button = customtkinter.CTkButton(self.frame,
+                                                    width=50, height=20, 
+                                                    border_width=2, corner_radius=8, 
+                                                    text="Отклонить",
+                                                    #text_font=self.font,
+                                                    border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
+                                                    command=self.decline_func)
+            self.button.grid(row=1, column=1, padx=25, pady=25, stycky="sw")
+        
         self.mainloop()
+
+    def confirm_func(self):
+        self.flag=True
+        self.destroy()
+        
+    def decline_func(self):
+        self.flag=False
+        self.destroy()
 
 # Класс окна настроек / optons window class
 class Options(customtkinter.CTkToplevel):
@@ -354,25 +403,26 @@ class Options(customtkinter.CTkToplevel):
                                                 width=(master.OPT_WIDTH-30)/2,
                                                 height=master.OPT_HEIGHT-20,
                                                 corner_radius=10)
-        self.frame_left.grid(row=0, column=0, sticky="w", padx=10, pady=10)
-
+        self.frame_left.pack(padx=[10,5], pady=10, side='left', fill='both')
+        
         self.frame_right = customtkinter.CTkFrame(self,
                                                 width=(master.OPT_WIDTH-30)/2,
-                                                height=master.OPT_HEIGHT-105,
+                                                height=master.OPT_HEIGHT-100,
                                                 corner_radius=10)
-        self.frame_right.grid(row=0, column=1, sticky="ne", pady=10)
+        self.frame_right.pack(padx=[5,10], pady=[10,0], side='top', fill='both', expand=True)
 
         self.frame_save = customtkinter.CTkFrame(self,
                                                 width=(master.OPT_WIDTH-30)/2,
                                                 height=30,
                                                 corner_radius=10)
-        self.frame_save.grid(row=0, column=1, sticky="se", pady=10) 
+        self.frame_save.pack(padx=[5,10], pady=[0,10], side='bottom', fill='both')
 
         self.frame_default = customtkinter.CTkFrame(self,
                                                     width=(master.OPT_WIDTH-30)/2,
                                                     height=30,
                                                     corner_radius=10)
-        self.frame_default.grid(row=0, column=1, sticky="se", pady=55)
+        self.frame_default.pack(padx=[5,10], pady=[5,10], side='bottom', fill='both')
+
 
         self.save_button = customtkinter.CTkButton(self.frame_save, 
                                                     width=(master.OPT_WIDTH-30)/2-10, 
@@ -387,22 +437,59 @@ class Options(customtkinter.CTkToplevel):
                                                     text="Сбросить настройки",
                                                     command=self.default_button_func)
         self.default_button.pack(padx=5, pady=5)
-
-
-
+        
         self.label_1r = customtkinter.CTkLabel(self.frame_right,
                                                 width=(master.OPT_WIDTH-30)/2-20,
                                                 height=20,
                                                 text="Цветовое оформление:")
-        self.label_1r.place(x=5, y=5)
+        self.label_1r.grid(row=0, column=0, padx=5, pady=5)
 
         self.optionmenu_1r = customtkinter.CTkOptionMenu(self.frame_right,
                                                         width=(master.OPT_WIDTH-30)/2-20,
-                                                        height=20,
-                                                        values=conf.mix_values(["Dark", "Light", "System"],
+                                                        height=25,
+                                                        values=config.mix_values(["Dark", "Light", "System"],
                                                                                 master.config_data['USER_SETTINGS']['theme']),
                                                         command=self.theme_button)
-        self.optionmenu_1r.place(x=5, y=30)
+        self.optionmenu_1r.grid(row=1, column=0, padx=5, pady=0)
+        
+        self.label_1l = customtkinter.CTkLabel(self.frame_left,
+                                                width=(master.OPT_WIDTH-30)/2-20,
+                                                height=20,
+                                                text="Настройки сохранённых данных")
+        self.label_1l.grid(row=0, column=0, padx=5, pady=5)
+        
+        self.button_1l = customtkinter.CTkButton(self.frame_left, 
+                                                    width=(master.OPT_WIDTH-30)/2-10, 
+                                                    height=20,
+                                                    text="Очистить историю поиска",
+                                                    command=lambda: self.delete_history_button_func(master))
+        self.button_1l.grid(row=1, column=0, padx=10, pady=[0,5])
+
+        self.button_2l = customtkinter.CTkButton(self.frame_left, 
+                                                    width=(master.OPT_WIDTH-30)/2-10, 
+                                                    height=20,
+                                                    text="Очистить временную  базу",
+                                                    command=self.default_button_func)
+        self.button_2l.grid(row=2, column=0, padx=10, pady=[0,5])
+
+        self.button_3l = customtkinter.CTkButton(self.frame_left, 
+                                                    width=(master.OPT_WIDTH-30)/2-10, 
+                                                    height=20,
+                                                    text="Очистить историю парсинга",
+                                                    command=self.default_button_func)
+        self.button_3l.grid(row=3, column=0, padx=10, pady=[0,5])
+
+        self.label_2l = customtkinter.CTkLabel(self.frame_left,
+                                                width=(master.OPT_WIDTH-30)/2-20,
+                                                height=20,
+                                                text="Лимит истории поиска")
+        self.label_2l.grid(row=4, column=0, padx=5, pady=[0,5])
+        
+        self.counter_1l = FloatSpinbox(self.frame_left,
+                                        width=(master.OPT_WIDTH-30)/2-20,
+                                        step_size=1, count_system='int',
+                                        minimum=1, maximum=30)
+        self.counter_1l.grid(row=5, column=0, padx=5, pady=[0,5])
         
         self.keyboard_bind()
 
@@ -410,13 +497,23 @@ class Options(customtkinter.CTkToplevel):
         self.master.config_data['USER_SETTINGS']['theme'] = value
     
     def save_button_func(self):
-        conf.set_config(self.master)
+        config.set_config(self.master)
         self.master.refresh_by_config()
         self.destroy()
     
+    def delete_history_button_func(self, master):
+        self.messange = Messange(master, cl='info',
+                                    title='| Очистка истории |',
+                                    msg = "История поиска будет \n безвозвратно удалена",
+                                    confirm_button=True, decline_button=True)
+        if self.messange.flag==True:
+            master.db.delete_history()
+        else:
+            pass
+        
     def default_button_func(self):
-        conf.return_to_default(self.master)
-        conf.set_config(self.master)
+        config.return_to_default(self.master)
+        config.set_config(self.master)
         self.master.refresh_by_config()
         self.destroy()
 
@@ -429,6 +526,103 @@ class Options(customtkinter.CTkToplevel):
 class Info_module(customtkinter.CTkFrame):
     def __init__(self, master, data):
         super().__init__(master, height=60, corner_radius=10)
+
+# Класс счетчика
+class FloatSpinbox(customtkinter.CTkFrame):
+    def __init__(self, *args,
+                 width: int = 100,
+                 height: int = 32,
+                 minimum: int = 0,
+                 maximum: int = 100,
+                 count_system: str = 'int',
+                 step_size: Union[int, float] = 1,
+                 command: Callable = None,
+                 **kwargs):
+        super().__init__(*args, width=width, height=height, **kwargs)
+
+        self.count_system = count_system
+        self.step_size = step_size
+        self.command = command
+        self.minimum = minimum
+        self.maximum = maximum
+
+        self.configure(fg_color=("gray78", "gray28"))  # set frame color
+
+        self.grid_columnconfigure((0, 2), weight=0)  # buttons don't expand
+        self.grid_columnconfigure(1, weight=1)  # entry expands
+
+        self.subtract_button = customtkinter.CTkButton(self, text="-", width=height-6, height=height-6,
+                                                       command=self.subtract_button_callback)
+        self.subtract_button.grid(row=0, column=0, padx=(3, 0), pady=3)
+
+        self.entry = customtkinter.CTkEntry(self, width=width-(2*height), height=height-6, border_width=0)
+        self.entry.grid(row=0, column=1, columnspan=1, padx=3, pady=3, sticky="ew")
+
+        self.add_button = customtkinter.CTkButton(self, text="+", width=height-6, height=height-6,
+                                                  command=self.add_button_callback)
+        self.add_button.grid(row=0, column=2, padx=(0, 3), pady=3)
+
+        # default value
+        if self.count_system=="int":
+            self.entry.insert(0, "0")
+        if self.count_system=="float":
+            self.entry.insert(0, "0.0")
+
+    def add_button_callback(self):
+        if self.command is not None:
+            self.command()
+        if self.count_system=='int':
+            try:
+                if int(self.entry.get()) + self.step_size <= self.maximum:
+                    value = int(self.entry.get()) + self.step_size
+                    self.entry.delete(0, "end")
+                    self.entry.insert(0, value)
+            except ValueError:
+                return
+
+        if self.count_system=='float':
+            try:
+                if float(self.entry.get()) + self.step_size <= self.maximum:
+                    value = float(self.entry.get()) + self.step_size
+                    self.entry.delete(0, "end")
+                    self.entry.insert(0, value)
+            except ValueError:
+                return
+
+    def subtract_button_callback(self):
+        if self.command is not None:
+            self.command()
+        
+        if self.count_system=='int':
+            try:
+                if int(self.entry.get()) - self.step_size >= self.minimum:
+                    value = int(self.entry.get()) - self.step_size
+                    self.entry.delete(0, "end")
+                    self.entry.insert(0, value)
+            except ValueError:
+                return
+                
+        if self.count_system=='float':
+            try:
+                if float(self.entry.get()) - self.step_size >= self.minimum:
+                    value = float(self.entry.get()) - self.step_size
+                    self.entry.delete(0, "end")
+                    self.entry.insert(0, value)
+            except ValueError:
+                return
+
+    def get(self) -> Union[float, None]:
+        try:
+            return float(self.entry.get())
+        except ValueError:
+            return None
+
+    def set(self, value: float):
+        self.entry.delete(0, "end")
+        if self.count_system=='int':
+            self.entry.insert(0, str(int(value)))
+        if self.count_system=='float':
+            self.entry.insert(0, str(float(value)))
 
 # Запуск приложения / Start app
 if __name__ == "__main__":

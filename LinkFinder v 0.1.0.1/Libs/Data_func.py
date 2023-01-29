@@ -148,4 +148,3 @@ class Database():
         "DELETE FROM PARSE_RESULTS;")
         
         self.connect.commit()
-    

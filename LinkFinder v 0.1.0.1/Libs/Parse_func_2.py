@@ -9,12 +9,11 @@ from bs4 import BeautifulSoup
 #============================================================================================================
 # Промежуточные функции для парсинга
 
-def get_links(html):
-    soup = BeautifulSoup(html, features='html.parser')
+def get_links(driver):
     result_links = []
-    for link in soup.find_all(class_='Link Link_theme_normal OrganicTitle-Link organic__url link i-bem'):
-        result_links.append(link.get('href'))
-    print(result_links)
+    for elem in driver.find_elements(By.XPATH, '//*[@id="search-result"]/li'):
+        print(elem.get_attribute("href§§222333c"))
+    #return result_links
 
 
 def parse_site(url, driver):
@@ -53,7 +52,7 @@ def start_parse(search):
     #chrome_options.add_argument("--headless")
     chrome_options.add_argument('--disable-notifications')
     chrome_options.add_argument('window-size=1920x1080')
-    chrome_options.add_argument("user-data-dir=C:\\/Users/Dima/Library/Application Support/Google/Chrome/Default")
+    chrome_options.add_argument("user-data-dir=./Data/Default")
     driver = webdriver.Chrome(path+'/chromedriver_v109', options=chrome_options)
     # Делаем запрос в поисковую машину
     driver.get(browser_url)
@@ -64,7 +63,9 @@ def start_parse(search):
     search_button.click()
 
     # Считываем ссылки из результата поиска и проверяем текст на каждой из них
-    for link in get_links(driver.page_source):
-        parse_site(link, driver)
 
+    #for link in get_links(driver.page_source):
+        #parse_site(link, driver)
+    get_links(driver)
+    driver.close()
 start_parse("пгу")
