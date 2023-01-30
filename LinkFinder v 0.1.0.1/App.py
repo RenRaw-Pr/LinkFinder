@@ -1,5 +1,6 @@
 import os
 from typing import Union, Callable
+import re
 
 from PIL import Image
 import tkinter
@@ -31,10 +32,10 @@ class App(customtkinter.CTk):
         # Проверка версий драйверов
         versions = cp.find_drivers(cp.try_driver_last_version())
         if versions[0] == "warning":
-            Messange(self, 'warning', 'Warning 0.1', 
+            Messange(self, self, 'warning', 'Warning 0.1', 
             'Не найден драйвер подходящей версии,\n'+
             'возможна работа только c базой данных.'+
-            '\n \nВерсия вашего браузера: '+ versions[1], skip_button='True')
+            '\n\nВерсия вашего браузера:\n'+ versions[1], skip_button=True)
     #============================================================================================================
     # Технические функции 
     # Функция присвоения главных параметров / main parametres function
@@ -299,8 +300,8 @@ class Save_to_file(customtkinter.CTkFrame):
 # Классы для создания дополнительных окон     
 # Класс уведомлений [cl = 'warning', 'info', 'error'] / messange class [cl = 'warning', 'info', 'error']
 class Messange(customtkinter.CTkToplevel):
-    def __init__(self, master, cl, title, msg, skip_button=None, confirm_button=None, decline_button=None):
-        super().__init__(master)
+    def __init__(self, parent, master, cl, title, msg, skip_button=None, confirm_button=None, decline_button=None):
+        super().__init__(parent)
         self.geometry(f"{master.MSG_WIDTH}x{master.MSG_HEIGHT}+{int(master.X_MSG)}+{int(master.Y_MSG)}")
         self.title(title)
         self.resizable(width=False, height=False)
@@ -322,63 +323,52 @@ class Messange(customtkinter.CTkToplevel):
                                                     height=70,
                                                     text="",
                                                     image=self.img)
-        self.icon_warning.grid(row=0, column=0, padx=10, pady=0, sticky="W")
+        self.icon_warning.grid(row=0, column=0, padx=20, pady=50, sticky="N")
 
         self.text = customtkinter.CTkLabel(self.frame,
                                             width=master.MSG_WIDTH-130,height=master.MSG_HEIGHT-20, 
                                             text=msg, #text_font=self.font,
                                             justify=tkinter.LEFT)
-        self.text.grid(row=0, column=1, padx=10, pady=0, sticky="N")
+        self.text.grid(row=0, column=1, padx=0, pady=0, sticky="N")
+        
+        if cl == 'warning':
+            self.color = '#FFDE3B'
+        if cl == 'error':
+            self.color = '#FB0406'
+        if cl == 'info':
+            self.color = '#03ACC7'
 
-        if skip_button == 'True': 
-            if cl == 'warning':
-                self.color = '#FFDE3B'
-            if cl == 'error':
-                self.color = '#FB0406'
-            if cl == 'info':
-                self.color = '#03ACC7'
-            self.button = customtkinter.CTkButton(self.frame,
+        if skip_button == True: 
+            self.s_button = customtkinter.CTkButton(self.frame,
                                                     width=50, height=20, 
                                                     border_width=2, corner_radius=8, 
                                                     text="Пропустить",
                                                     #text_font=self.font,
                                                     border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
                                                     command=self.destroy)
-            self.bind('<Return>', self.destroy)
-            self.button.grid(row=1, column=1, padx=25, pady=25, stycky="se")
+            self.s_button.pack(side='bottom', anchor='se', padx=10, pady=10)
+            self.bind('<Return>', lambda event : self.destroy())
         
-        if confirm_button == 'True': 
-            if cl == 'warning':
-                self.color = '#FFDE3B'
-            if cl == 'error':
-                self.color = '#FB0406'
-            if cl == 'info':
-                self.color = '#03ACC7'
-            self.button = customtkinter.CTkButton(self.frame,
+        if confirm_button == True: 
+            self.c_button = customtkinter.CTkButton(self.frame,
                                                     width=50, height=20, 
                                                     border_width=2, corner_radius=8, 
                                                     text="Принять",
                                                     #text_font=self.font,
                                                     border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
                                                     command=self.confirm_func)
-            self.bind('<Return>', self.confirm_func)
-            self.button.grid(row=1, column=1, padx=25, pady=25, stycky="se")
-
-        if decline_button == 'True': 
-            if cl == 'warning':
-                self.color = '#FFDE3B'
-            if cl == 'error':
-                self.color = '#FB0406'
-            if cl == 'info':
-                self.color = '#03ACC7'
-            self.button = customtkinter.CTkButton(self.frame,
+            self.c_button.pack(side='right', anchor='se', padx=10, pady=10)
+            self.bind('<Return>', lambda event : self.confirm_func())
+        
+        if decline_button == True: 
+            self.d_button = customtkinter.CTkButton(self.frame,
                                                     width=50, height=20, 
                                                     border_width=2, corner_radius=8, 
                                                     text="Отклонить",
                                                     #text_font=self.font,
                                                     border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
                                                     command=self.decline_func)
-            self.button.grid(row=1, column=1, padx=25, pady=25, stycky="sw")
+            self.d_button.pack(side='right', anchor='se', padx=0, pady=10)
         
         self.mainloop()
 
@@ -469,14 +459,14 @@ class Options(customtkinter.CTkToplevel):
                                                     width=(master.OPT_WIDTH-30)/2-10, 
                                                     height=20,
                                                     text="Очистить временную  базу",
-                                                    command=self.default_button_func)
+                                                    command=lambda: self.delete_reference_button_func(master))
         self.button_2l.grid(row=2, column=0, padx=10, pady=[0,5])
 
         self.button_3l = customtkinter.CTkButton(self.frame_left, 
                                                     width=(master.OPT_WIDTH-30)/2-10, 
                                                     height=20,
                                                     text="Очистить историю парсинга",
-                                                    command=self.default_button_func)
+                                                    command=lambda: self.delete_parser_history_button_func(master))
         self.button_3l.grid(row=3, column=0, padx=10, pady=[0,5])
 
         self.label_2l = customtkinter.CTkLabel(self.frame_left,
@@ -485,7 +475,7 @@ class Options(customtkinter.CTkToplevel):
                                                 text="Лимит истории поиска")
         self.label_2l.grid(row=4, column=0, padx=5, pady=[0,5])
         
-        self.counter_1l = FloatSpinbox(self.frame_left,
+        self.counter_1l = FloatSpinbox(self.frame_left, start=master.config_data['USER_SETTINGS']['history_limit'],
                                         width=(master.OPT_WIDTH-30)/2-20,
                                         step_size=1, count_system='int',
                                         minimum=1, maximum=30)
@@ -497,20 +487,32 @@ class Options(customtkinter.CTkToplevel):
         self.master.config_data['USER_SETTINGS']['theme'] = value
     
     def save_button_func(self):
+        self.master.config_data['USER_SETTINGS']['history_limit'] = str(self.counter_1l.get())
         config.set_config(self.master)
         self.master.refresh_by_config()
         self.destroy()
     
     def delete_history_button_func(self, master):
-        self.messange = Messange(master, cl='info',
+        self.messange = Messange(parent=self, master=master, cl='info',
                                     title='| Очистка истории |',
-                                    msg = "История поиска будет \n безвозвратно удалена",
-                                    confirm_button=True, decline_button=True)
-        if self.messange.flag==True:
-            master.db.delete_history()
-        else:
-            pass
-        
+                                    msg = "История поиска будет\nбезвозвратно удалена",
+                                    skip_button=False,
+                                    confirm_button=True, decline_button=True,)
+
+    def delete_reference_button_func(self, master):
+        self.messange = Messange(parent=self, master=master, cl='info',
+                                    title='| Очистка истории |',
+                                    msg = "Временная база данных будет\nбезвозвратно удалена",
+                                    skip_button=False,
+                                    confirm_button=True, decline_button=True,)
+    
+    def delete_parser_history_button_func(self, master):
+        self.messange = Messange(parent=self, master=master, cl='info',
+                                    title='| Очистка истории |',
+                                    msg = "История парсера будет\nбезвозвратно удалена",
+                                    skip_button=False,
+                                    confirm_button=True, decline_button=True,)
+    
     def default_button_func(self):
         config.return_to_default(self.master)
         config.set_config(self.master)
@@ -535,6 +537,7 @@ class FloatSpinbox(customtkinter.CTkFrame):
                  minimum: int = 0,
                  maximum: int = 100,
                  count_system: str = 'int',
+                 start: Union[int, float] = 0,
                  step_size: Union[int, float] = 1,
                  command: Callable = None,
                  **kwargs):
@@ -555,7 +558,8 @@ class FloatSpinbox(customtkinter.CTkFrame):
                                                        command=self.subtract_button_callback)
         self.subtract_button.grid(row=0, column=0, padx=(3, 0), pady=3)
 
-        self.entry = customtkinter.CTkEntry(self, width=width-(2*height), height=height-6, border_width=0)
+        self.check = (self.register(self.is_valid), "%P")
+        self.entry = customtkinter.CTkEntry(self, width=width-(2*height), height=height-6, border_width=0, validate="key", validatecommand=self.check)
         self.entry.grid(row=0, column=1, columnspan=1, padx=3, pady=3, sticky="ew")
 
         self.add_button = customtkinter.CTkButton(self, text="+", width=height-6, height=height-6,
@@ -564,9 +568,9 @@ class FloatSpinbox(customtkinter.CTkFrame):
 
         # default value
         if self.count_system=="int":
-            self.entry.insert(0, "0")
+            self.entry.insert(0, str(int(start)))
         if self.count_system=="float":
-            self.entry.insert(0, "0.0")
+            self.entry.insert(0, str(float(start)))
 
     def add_button_callback(self):
         if self.command is not None:
@@ -613,7 +617,14 @@ class FloatSpinbox(customtkinter.CTkFrame):
 
     def get(self) -> Union[float, None]:
         try:
-            return float(self.entry.get())
+            if float(self.entry.get())>=self.maximum:
+                value=self.maximum
+            if float(self.entry.get())<=self.minimum:
+                value=self.minimum
+            if self.count_system=='int':
+                return int(value)
+            if self.count_system=='float':
+                return float(value)
         except ValueError:
             return None
 
@@ -624,7 +635,23 @@ class FloatSpinbox(customtkinter.CTkFrame):
         if self.count_system=='float':
             self.entry.insert(0, str(float(value)))
 
-# Запуск приложения / Start app
+    def is_valid(self, newval):
+        if (float(newval)<=self.maximum) and (float(newval)>=self.minimum):
+            if self.count_system=='int':
+                self.entry.insert(0, str(int(newval)))
+            if self.count_system=='float':
+                self.entry.insert(0, str(float(newval)))
+            return True
+        else:
+            if float(newval)>=self.maximum:
+                value=self.maximum
+            if float(newval)<=self.minimum:
+                value=self.minimum
+            if self.count_system=='int':
+                self.entry.insert(0, str(int(value)))
+            if self.count_system=='float':
+                self.entry.insert(0, str(float(value)))
+
 if __name__ == "__main__":
     app = App()
     app.mainloop()
