@@ -1,6 +1,5 @@
 import os
 from typing import Union, Callable
-import re
 
 from PIL import Image
 import tkinter
@@ -143,7 +142,7 @@ class Search(customtkinter.CTkFrame):
 class Result_and_save(tkinter.PanedWindow):
     def __init__(self, master):
         super().__init__ (master, orient='vertical', bg=master.cget('bg'), borderwidth=0, sashwidth=10)
-        self.data = Result_data(self)
+        self.data = Result_data(self, parse=True, base=True, temporary=True)
         self.data.pack(side = tkinter.TOP)
         self.add(self.data)
         self.save = Save_to_file(self)
@@ -269,7 +268,7 @@ class Save_options(customtkinter.CTkFrame):
 
 # Класс виджета вывода данных / result data frame class
 class Result_data(customtkinter.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, parse=False, base=False, temporary=False):
         super().__init__(master, height=400, corner_radius=10)
         
         if master.master.config_data['USER_SETTINGS']['theme']=='Dark':
@@ -279,7 +278,7 @@ class Result_data(customtkinter.CTkFrame):
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        
+        # Размещение скроллбара и фрейма с информацией
         self.infobox = tkinter.Canvas(self, bg=self.info_bg_color,  highlightthickness=0)
         self.infobox.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
 
@@ -291,6 +290,35 @@ class Result_data(customtkinter.CTkFrame):
         self.scrollbar.grid(row=0, column=1, padx=5, pady=5, sticky="ns")
         self.infobox.configure(yscrollcommand=self.scrollbar.set)
         
+        self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
+        #размещение инфобоксов и заголовков
+        if parse==True:
+            data = master.master.database.get_parse_by_name("Универсальный держатель с бетоном  Jupiter  ND1000", 1)
+            print(data)
+            self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                        text="Результаты парсинга:",
+                                                        font=self.labels_font,
+                                                        anchor='w')
+            self.parse_label.pack(padx=5, pady=0,fill='x')
+            '''
+            self.parse_infoboxes = []
+            for elem in data:
+                self.parse_infoboxes.append()
+            '''
+        if base==True:
+            self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                        text="Результаты поиска по базе:",
+                                                        font=self.labels_font,
+                                                        anchor='w')
+            self.base_label.pack(padx=5, pady=0, fill='x')
+
+        if temporary==True:
+            self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                        text="Результаты поиска по временной базе:",
+                                                        font=self.labels_font,
+                                                        anchor='w')
+            self.parse_label.pack(padx=5, pady=0,fill='x')
+
 # Класс виджета сохранения данных в файл / save to file format frame class
 class Save_to_file(customtkinter.CTkFrame):
     def __init__(self, master):
@@ -388,6 +416,9 @@ class Options(customtkinter.CTkToplevel):
         self.geometry(f"{master.OPT_WIDTH}x{master.OPT_HEIGHT}+{int(master.X_OPT)}+{int(master.Y_OPT)}")
         self.resizable(width=False, height=False)
         self.attributes('-topmost', 'true')
+        
+        self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
+        self.labels_font = customtkinter.CTkFont("Avenir Next", 14, 'normal')
 
         self.frame_left = customtkinter.CTkFrame(self,
                                                 width=(master.OPT_WIDTH-30)/2,
@@ -418,6 +449,7 @@ class Options(customtkinter.CTkToplevel):
                                                     width=(master.OPT_WIDTH-30)/2-10, 
                                                     height=20,
                                                     text="Сохранить изменения",
+                                                    font=self.buttons_font,
                                                     command=self.save_button_func)
         self.save_button.pack(padx=5, pady=5)
 
@@ -425,13 +457,15 @@ class Options(customtkinter.CTkToplevel):
                                                     width=(master.OPT_WIDTH-30)/2-10, 
                                                     height=20,
                                                     text="Сбросить настройки",
+                                                    font=self.buttons_font,
                                                     command=self.default_button_func)
         self.default_button.pack(padx=5, pady=5)
         
         self.label_1r = customtkinter.CTkLabel(self.frame_right,
                                                 width=(master.OPT_WIDTH-30)/2-20,
                                                 height=20,
-                                                text="Цветовое оформление:")
+                                                text="Цветовое оформление:",
+                                                font=self.labels_font)
         self.label_1r.grid(row=0, column=0, padx=5, pady=5)
 
         self.optionmenu_1r = customtkinter.CTkOptionMenu(self.frame_right,
@@ -439,19 +473,22 @@ class Options(customtkinter.CTkToplevel):
                                                         height=25,
                                                         values=config.mix_values(["Dark", "Light", "System"],
                                                                                 master.config_data['USER_SETTINGS']['theme']),
+                                                        font=self.buttons_font,
                                                         command=self.theme_button)
         self.optionmenu_1r.grid(row=1, column=0, padx=5, pady=0)
         
         self.label_1l = customtkinter.CTkLabel(self.frame_left,
                                                 width=(master.OPT_WIDTH-30)/2-20,
                                                 height=20,
-                                                text="Настройки сохранённых данных")
+                                                text="Настройки сохранённых данных",
+                                                font=self.labels_font)
         self.label_1l.grid(row=0, column=0, padx=5, pady=5)
         
         self.button_1l = customtkinter.CTkButton(self.frame_left, 
                                                     width=(master.OPT_WIDTH-30)/2-10, 
                                                     height=20,
                                                     text="Очистить историю поиска",
+                                                    font=self.buttons_font,
                                                     command=lambda: self.delete_history_button_func(master))
         self.button_1l.grid(row=1, column=0, padx=10, pady=[0,5])
 
@@ -459,6 +496,7 @@ class Options(customtkinter.CTkToplevel):
                                                     width=(master.OPT_WIDTH-30)/2-10, 
                                                     height=20,
                                                     text="Очистить временную  базу",
+                                                    font=self.buttons_font,
                                                     command=lambda: self.delete_reference_button_func(master))
         self.button_2l.grid(row=2, column=0, padx=10, pady=[0,5])
 
@@ -466,13 +504,15 @@ class Options(customtkinter.CTkToplevel):
                                                     width=(master.OPT_WIDTH-30)/2-10, 
                                                     height=20,
                                                     text="Очистить историю парсинга",
+                                                    font=self.buttons_font,
                                                     command=lambda: self.delete_parser_history_button_func(master))
         self.button_3l.grid(row=3, column=0, padx=10, pady=[0,5])
 
         self.label_2l = customtkinter.CTkLabel(self.frame_left,
                                                 width=(master.OPT_WIDTH-30)/2-20,
                                                 height=20,
-                                                text="Лимит истории поиска")
+                                                text="Лимит истории поиска",
+                                                font=self.labels_font)
         self.label_2l.grid(row=4, column=0, padx=5, pady=[0,5])
         
         self.counter_1l = FloatSpinbox(self.frame_left, start=master.config_data['USER_SETTINGS']['history_limit'],
@@ -526,8 +566,36 @@ class Options(customtkinter.CTkToplevel):
 
 # Класс модуля в окне результатов
 class Info_module(customtkinter.CTkFrame):
-    def __init__(self, master, data):
+    def __init__(self, master, data, data_type=None):
         super().__init__(master, height=60, corner_radius=10)
+        
+        self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
+
+        self.name_label = customtkinter.CTkLabel(self, height=20, text=data[0],
+                                                 anchor='w',
+                                                 font=self.labels_font)
+        self.name_label.pack(padx=5)
+
+        self.price_label = customtkinter.CTkLabel(self, height=20, text="Стоимость: "+ str(data[1]) +" "+data[2],
+                                                 anchor='w',
+                                                 font=self.labels_font)
+        self.price_label.pack(padx=5)
+
+        self.unit_label = customtkinter.CTkLabel(self, height=20, text=data[3],
+                                                 anchor='w',
+                                                 font=self.labels_font)
+        self.unit_label.pack(padx=5)
+
+        self.url_label = customtkinter.CTkLabel(self, height=20, text=data[4],
+                                                 anchor='w',
+                                                 font=self.labels_font)
+        self.url_label.pack(padx=5)
+
+        if data_type=='parse':
+            self.date_label = customtkinter.CTkLabel(self, height=20, text=data[6],
+                                                 anchor='w',
+                                                 font=self.labels_font)
+            self.date_label.pack(padx=5)
 
 # Класс счетчика
 class FloatSpinbox(customtkinter.CTkFrame):
@@ -652,6 +720,8 @@ class FloatSpinbox(customtkinter.CTkFrame):
             if self.count_system=='float':
                 self.entry.insert(0, str(float(value)))
 
+'''
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+'''
