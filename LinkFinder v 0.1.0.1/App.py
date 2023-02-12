@@ -1,10 +1,14 @@
 import os
+import io
 from typing import Union, Callable
 
 from PIL import Image
+
 import tkinter
 from tkinter import filedialog as fd
 import customtkinter
+
+import webbrowser
 
 from Libs import Check_phase_func as cp
 from Libs import Config_func as config
@@ -279,6 +283,8 @@ class Result_data(customtkinter.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         # Размещение скроллбара и фрейма с информацией
+        self.opened_view = False
+
         self.infobox = tkinter.Canvas(self, bg=self.info_bg_color,  highlightthickness=0)
         self.infobox.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
 
@@ -293,8 +299,6 @@ class Result_data(customtkinter.CTkFrame):
         self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
         #размещение инфобоксов и заголовков
         if parse==True:
-            data = master.master.database.get_parse_by_name("Универсальный держатель с бетоном  Jupiter  ND1000", 1)
-            print(data)
             self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
                                                         text="Результаты парсинга:",
                                                         font=self.labels_font,
@@ -568,8 +572,9 @@ class Options(customtkinter.CTkToplevel):
 class Info_module(customtkinter.CTkFrame):
     def __init__(self, master, data, data_type=None):
         super().__init__(master, height=60, corner_radius=10)
-        
+
         self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
+        self.screenshot_image = customtkinter.CTkImage(Image.open(io.BytesIO(data[5])), size=(192,108))
 
         self.name_label = customtkinter.CTkLabel(self, height=20, text=data[0],
                                                  anchor='w',
@@ -590,13 +595,31 @@ class Info_module(customtkinter.CTkFrame):
                                                  anchor='w',
                                                  font=self.labels_font)
         self.url_label.pack(padx=5)
+        self.url_label.bind("<Button-1>", lambda e: self.clicked_url(data[4]))
 
+        self.screenshot_label = customtkinter.CTkLabel(self, width=202, height=118, fg_color=('#C2C2C2','#5A5A5A'), corner_radius=5,
+                                                       text='', image=self.screenshot_image,
+                                                       cursor='sizing')
+        self.screenshot_label.pack(padx=5)
+        self.screenshot_label.bind("<Button-1>", lambda e: print('cklicked'))
+        
         if data_type=='parse':
             self.date_label = customtkinter.CTkLabel(self, height=20, text=data[6],
                                                  anchor='w',
                                                  font=self.labels_font)
             self.date_label.pack(padx=5)
-
+        
+    def clicked_url(self, url):
+        webbrowser.open_new(url)
+        
+    def open_view(self, master, image=None):
+        if master.opened_view == True:
+            for widget in master.winfo_children():
+                if isinstance(widget, customtkinter.CTkToplevel):
+                    widget.destroy()
+            master.opened_view = False
+        elif master.opened_view == False and image!= None:
+            self.image_view = customtkinter.CTkToplevel(self, )
 # Класс счетчика
 class FloatSpinbox(customtkinter.CTkFrame):
     def __init__(self, *args,
