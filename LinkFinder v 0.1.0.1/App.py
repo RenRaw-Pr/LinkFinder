@@ -283,7 +283,6 @@ class Result_data(customtkinter.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         # Размещение скроллбара и фрейма с информацией
-        self.opened_view = False
 
         self.infobox = tkinter.Canvas(self, bg=self.info_bg_color,  highlightthickness=0)
         self.infobox.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
@@ -519,11 +518,24 @@ class Options(customtkinter.CTkToplevel):
                                                 font=self.labels_font)
         self.label_2l.grid(row=4, column=0, padx=5, pady=[0,5])
         
-        self.counter_1l = FloatSpinbox(self.frame_left, start=master.config_data['USER_SETTINGS']['history_limit'],
+        self.counter_1l = FloatSpinbox(self.frame_left, start=master.config_data['SEARCH_SETTINGS']['history_limit'],
                                         width=(master.OPT_WIDTH-30)/2-20,
                                         step_size=1, count_system='int',
                                         minimum=1, maximum=30)
         self.counter_1l.grid(row=5, column=0, padx=5, pady=[0,5])
+        
+        self.label_3l = customtkinter.CTkLabel(self.frame_left,
+                                                width=(master.OPT_WIDTH-30)/2-20,
+                                                height=20,
+                                                text="Маштаб просмотра",
+                                                font=self.labels_font)
+        self.label_3l.grid(row=6, column=0, padx=5, pady=[0,5])
+
+        self.counter_2l = FloatSpinbox(self.frame_left, start=master.config_data['SEARCH_SETTINGS']['scale'],
+                                        width=(master.OPT_WIDTH-30)/2-20,
+                                        step_size=1, count_system='int',
+                                        minimum=2, maximum=6)
+        self.counter_2l.grid(row=7, column=0, padx=5, pady=[0,5])
         
         self.keyboard_bind()
 
@@ -531,7 +543,8 @@ class Options(customtkinter.CTkToplevel):
         self.master.config_data['USER_SETTINGS']['theme'] = value
     
     def save_button_func(self):
-        self.master.config_data['USER_SETTINGS']['history_limit'] = str(self.counter_1l.get())
+        self.master.config_data['SEARCH_SETTINGS']['history_limit'] = str(self.counter_1l.get())
+        self.master.config_data['SEARCH_SETTINGS']['scale'] = str(self.counter_2l.get())
         config.set_config(self.master)
         self.master.refresh_by_config()
         self.destroy()
@@ -570,56 +583,64 @@ class Options(customtkinter.CTkToplevel):
 
 # Класс модуля в окне результатов
 class Info_module(customtkinter.CTkFrame):
-    def __init__(self, master, data, data_type=None):
+    def __init__(self, master, scale, data, data_type=None):
         super().__init__(master, height=60, corner_radius=10)
 
         self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
+        self.url_font = customtkinter.CTkFont("Avenir Next", 12, 'normal', 'italic', underline=True)
         self.screenshot_image = customtkinter.CTkImage(Image.open(io.BytesIO(data[5])), size=(192,108))
 
         self.name_label = customtkinter.CTkLabel(self, height=20, text=data[0],
                                                  anchor='w',
                                                  font=self.labels_font)
-        self.name_label.pack(padx=5)
+        self.name_label.grid(row=0, column=1, padx=10, pady=10, sticky="W")
 
         self.price_label = customtkinter.CTkLabel(self, height=20, text="Стоимость: "+ str(data[1]) +" "+data[2],
                                                  anchor='w',
                                                  font=self.labels_font)
-        self.price_label.pack(padx=5)
+        self.price_label.grid(row=1, column=1)
 
         self.unit_label = customtkinter.CTkLabel(self, height=20, text=data[3],
                                                  anchor='w',
                                                  font=self.labels_font)
-        self.unit_label.pack(padx=5)
+        self.unit_label.grid(row=1, column=2, sticky="W")
 
         self.url_label = customtkinter.CTkLabel(self, height=20, text=data[4],
                                                  anchor='w',
-                                                 font=self.labels_font)
-        self.url_label.pack(padx=5)
+                                                 font=self.url_font)
+        self.url_label.grid(row=2, column=1, sticky="W")
         self.url_label.bind("<Button-1>", lambda e: self.clicked_url(data[4]))
 
         self.screenshot_label = customtkinter.CTkLabel(self, width=202, height=118, fg_color=('#C2C2C2','#5A5A5A'), corner_radius=5,
                                                        text='', image=self.screenshot_image,
                                                        cursor='sizing')
-        self.screenshot_label.pack(padx=5)
-        self.screenshot_label.bind("<Button-1>", lambda e: print('cklicked'))
+        self.screenshot_label.grid(row=0, column=0, rowspan=2)
+        self.screenshot_label.bind("<Button-1>", lambda e: self.open_view(scale, data, image=data[5]))
         
         if data_type=='parse':
             self.date_label = customtkinter.CTkLabel(self, height=20, text=data[6],
                                                  anchor='w',
                                                  font=self.labels_font)
-            self.date_label.pack(padx=5)
+            self.date_label.grid(row=3, column=0)
         
     def clicked_url(self, url):
         webbrowser.open_new(url)
         
-    def open_view(self, master, image=None):
-        if master.opened_view == True:
-            for widget in master.winfo_children():
-                if isinstance(widget, customtkinter.CTkToplevel):
-                    widget.destroy()
-            master.opened_view = False
-        elif master.opened_view == False and image!= None:
-            self.image_view = customtkinter.CTkToplevel(self, )
+    def open_view(self, scale, data, image=None):
+        if image!= None:
+            self.image_view = customtkinter.CTkToplevel(self)
+            self.image_view.title('| Просмотр |')
+            self.image_view.geometry(f'{192*scale+10}x{108*scale+10}')
+            self.image_view.resizable(width=False, height=False)
+            self.image_view.attributes('-topmost', 'true')
+
+            self.image_view.image = customtkinter.CTkImage(Image.open(io.BytesIO(data[5])), size=(192*scale,108*scale))
+            self.image_view.image_label = customtkinter.CTkLabel(self.image_view, width=192*scale+2, height=108*scale+2,
+                                                                    text='', image=self.image_view.image,
+                                                                    cursor = 'sizing')
+            self.image_view.image_label.pack(padx=5, pady=5)
+            self.image_view.image_label.bind("<Button-1>", lambda e: self.image_view.destroy())
+
 # Класс счетчика
 class FloatSpinbox(customtkinter.CTkFrame):
     def __init__(self, *args,
@@ -710,8 +731,12 @@ class FloatSpinbox(customtkinter.CTkFrame):
         try:
             if float(self.entry.get())>=self.maximum:
                 value=self.maximum
+            else:
+                value = self.entry.get()
             if float(self.entry.get())<=self.minimum:
                 value=self.minimum
+            else:
+                value = self.entry.get()
             if self.count_system=='int':
                 return int(value)
             if self.count_system=='float':
@@ -742,7 +767,6 @@ class FloatSpinbox(customtkinter.CTkFrame):
                 self.entry.insert(0, str(int(value)))
             if self.count_system=='float':
                 self.entry.insert(0, str(float(value)))
-
 '''
 if __name__ == "__main__":
     app = App()

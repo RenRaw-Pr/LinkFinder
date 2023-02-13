@@ -13,7 +13,7 @@ def create_config():
     
     config.add_section('SEARCH_SETTINGS')
     config.set('SEARCH_SETTINGS', 'temporary_base', '')
-    config.set('SEARCH_SETTINGS', 'history_limit', '')
+    config.set('SEARCH_SETTINGS', 'history_limit', '0')
 
     config.add_section('FILE_SAVE_SETTINGS')
 
