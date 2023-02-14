@@ -23,6 +23,14 @@ class Database():
         SCREENSHOT BLOB,
         DATE TEXT NOT NULL);
 
+        CREATE TABLE IF NOT EXISTS TEMPORARY_DB
+        (NAME TEXT NOT NULL,
+        PRICE REAL NOT NULL,
+        PRICE_UNIT TEXT NOT NULL,
+        UNIT TEXT NOT NULL,
+        URL_ADRESS TEXT NOT NULL,
+        SCREENSHOT BLOB);
+
         CREATE TABLE IF NOT EXISTS SEARCH_HISTORY
         (NAME TEXT NOT NULL,
         PRICE REAL,
@@ -107,6 +115,31 @@ class Database():
     def delete_reference(self):
         self.curs.execute(
         "DELETE FROM REFERENCES_DB;")
+        
+        self.connect.commit()
+
+   # ДЛЯ ВРЕМЕННОЙ БАЗЫ ИЗ ДОКУМЕНТА ----- структура: (name, price, price_unit, unit, url, screenshot)
+    def add_temporary(self, data):
+        self.curs.execute(
+        """   
+        INSERT INTO TEMPORARY_DB VALUES
+        (?,?,?,?,?,?);
+        """, data)
+        
+        self.connect.commit()
+
+    def get_temp_by_name(self, name):
+        self.curs.execute(
+        """
+        SELECT * FROM TEMPORARY_DB WHERE NAME = ?
+        """, (name,))
+        res = self.curs.fetchall()
+        self.connect.commit()
+        return(res)
+
+    def delete_temporary(self):
+        self.curs.execute(
+        "DELETE FROM TEMPORARY_DB;")
         
         self.connect.commit()
 

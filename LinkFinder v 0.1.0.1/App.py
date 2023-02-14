@@ -303,17 +303,21 @@ class Result_data(customtkinter.CTkFrame):
                                                         font=self.labels_font,
                                                         anchor='w')
             self.parse_label.pack(padx=5, pady=0,fill='x')
-            '''
-            self.parse_infoboxes = []
-            for elem in data:
-                self.parse_infoboxes.append()
-            '''
+            self.parse_boxes = []
+            self.parse_data = master.master.database.get_parse_by_name("Светодиодный светильник 33 Вт, IP65, с закаленным стеклом   МЕТАН   LE-ССП-53-033-3773-65Д", 1)
+            for key in range(len(self.parse_data)):
+                self.parse_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.parse_data[key], data_type="parse").pack(padx=5, pady=5, fill='x'))
+
         if base==True:
             self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
                                                         text="Результаты поиска по базе:",
                                                         font=self.labels_font,
                                                         anchor='w')
             self.base_label.pack(padx=5, pady=0, fill='x')
+            self.base_boxes = []
+            self.base_data = master.master.database.get_ref_by_name("Светодиодный светильник 33 Вт, IP65, с закаленным стеклом   МЕТАН   LE-ССП-53-033-3773-65Д")
+            for key in range(len(self.base_data)):
+                self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.parse_data[key], data_type="ref").pack(padx=5, pady=5, fill='x'))
 
         if temporary==True:
             self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
@@ -321,6 +325,10 @@ class Result_data(customtkinter.CTkFrame):
                                                         font=self.labels_font,
                                                         anchor='w')
             self.parse_label.pack(padx=5, pady=0,fill='x')
+            self.temporary_boxes = []
+            self.temporary_data = master.master.database.get_temp_by_name("Светодиодный светильник 33 Вт, IP65, с закаленным стеклом   МЕsТАН   LE-ССП-53-033-3773-65Д")
+            for key in range(len(self.temporary_data)):
+                self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.parse_data[key], data_type="temp").pack(padx=5, pady=5, fill='x'))
 
 # Класс виджета сохранения данных в файл / save to file format frame class
 class Save_to_file(customtkinter.CTkFrame):
@@ -339,7 +347,7 @@ class Messange(customtkinter.CTkToplevel):
         self.attributes('-topmost', 'true')
 
         self.flag = None
-        self.font = customtkinter.CTkFont(family="Avenir Next", size=12, weight='normal')
+        self.font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
 
         self.frame = customtkinter.CTkFrame(self, 
                                         width=master.MSG_WIDTH-20, 
@@ -358,7 +366,7 @@ class Messange(customtkinter.CTkToplevel):
 
         self.text = customtkinter.CTkLabel(self.frame,
                                             width=master.MSG_WIDTH-130,height=master.MSG_HEIGHT-20, 
-                                            text=msg, #text_font=self.font,
+                                            text=msg, font=self.font,
                                             justify=tkinter.LEFT)
         self.text.grid(row=0, column=1, padx=0, pady=0, sticky="N")
         
@@ -374,42 +382,42 @@ class Messange(customtkinter.CTkToplevel):
                                                     width=50, height=20, 
                                                     border_width=2, corner_radius=8, 
                                                     text="Пропустить",
-                                                    #text_font=self.font,
+                                                    font=self.font,
                                                     border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
-                                                    command=self.destroy)
+                                                    command = lambda: self.destroy)
             self.s_button.pack(side='bottom', anchor='se', padx=10, pady=10)
-            self.bind('<Return>', lambda event : self.destroy())
+            self.bind('<Return>', lambda e: self.destroy())
         
         if confirm_button == True: 
             self.c_button = customtkinter.CTkButton(self.frame,
                                                     width=50, height=20, 
                                                     border_width=2, corner_radius=8, 
                                                     text="Принять",
-                                                    #text_font=self.font,
+                                                    font=self.font,
                                                     border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
-                                                    command=self.confirm_func)
+                                                    command = lambda: self.confirm_func())
             self.c_button.pack(side='right', anchor='se', padx=10, pady=10)
-            self.bind('<Return>', lambda event : self.confirm_func())
+            self.bind('<Return>', lambda e: self.confirm_func())
         
         if decline_button == True: 
             self.d_button = customtkinter.CTkButton(self.frame,
                                                     width=50, height=20, 
                                                     border_width=2, corner_radius=8, 
                                                     text="Отклонить",
-                                                    #text_font=self.font,
+                                                    font=self.font,
                                                     border_color=self.color, text_color=self.color, fg_color="transparent", bg_color="transparent", hover_color=('#B0AFB1','#515152'),
-                                                    command=self.decline_func)
+                                                    command = lambda: self.decline_func())
             self.d_button.pack(side='right', anchor='se', padx=0, pady=10)
         
         self.mainloop()
 
     def confirm_func(self):
         self.flag=True
-        self.destroy()
+        self.withdraw()
         
     def decline_func(self):
         self.flag=False
-        self.destroy()
+        self.withdraw()
 
 # Класс окна настроек / optons window class
 class Options(customtkinter.CTkToplevel):
@@ -500,7 +508,7 @@ class Options(customtkinter.CTkToplevel):
                                                     height=20,
                                                     text="Очистить временную  базу",
                                                     font=self.buttons_font,
-                                                    command=lambda: self.delete_reference_button_func(master))
+                                                    command=lambda: self.delete_temporary_button_func(master))
         self.button_2l.grid(row=2, column=0, padx=10, pady=[0,5])
 
         self.button_3l = customtkinter.CTkButton(self.frame_left, 
@@ -556,7 +564,7 @@ class Options(customtkinter.CTkToplevel):
                                     skip_button=False,
                                     confirm_button=True, decline_button=True,)
 
-    def delete_reference_button_func(self, master):
+    def delete_temporary_button_func(self, master):
         self.messange = Messange(parent=self, master=master, cl='info',
                                     title='| Очистка истории |',
                                     msg = "Временная база данных будет\nбезвозвратно удалена",
@@ -588,40 +596,49 @@ class Info_module(customtkinter.CTkFrame):
 
         self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
         self.url_font = customtkinter.CTkFont("Avenir Next", 12, 'normal', 'italic', underline=True)
-        self.screenshot_image = customtkinter.CTkImage(Image.open(io.BytesIO(data[5])), size=(192,108))
+        if data[5]==None:
+            self.screenshot_image = customtkinter.CTkImage(light_image = Image.open("./Design/Light_image_default.png"),
+                                                           dark_image = Image.open("./Design/Dark_image_default.png"), size=(192,108))
+
+            self.screenshot_label = customtkinter.CTkLabel(self, width=202, height=118, fg_color=('#C2C2C2','#5A5A5A'), corner_radius=5,
+                                                        text='', image=self.screenshot_image,
+                                                        cursor='sizing')
+            self.screenshot_label.grid(padx=5, pady=5, row=0, column=0, rowspan=4)
+        else:
+            self.screenshot_image = customtkinter.CTkImage(Image.open(io.BytesIO(data[5])), size=(192,108))
+
+            self.screenshot_label = customtkinter.CTkLabel(self, width=202, height=118, fg_color=('#C2C2C2','#5A5A5A'), corner_radius=5,
+                                                        text='', image=self.screenshot_image,
+                                                        cursor='sizing')
+            self.screenshot_label.grid(padx=5, pady=5, row=0, column=0, rowspan=4)
+            self.screenshot_label.bind("<Button-1>", lambda e: self.open_view(int(scale), data, image=data[5]))
 
         self.name_label = customtkinter.CTkLabel(self, height=20, text=data[0],
                                                  anchor='w',
                                                  font=self.labels_font)
-        self.name_label.grid(row=0, column=1, padx=10, pady=10, sticky="W")
+        self.name_label.grid(padx=5, pady=10, row=0, column=1, columnspan=2, sticky="NW")
 
         self.price_label = customtkinter.CTkLabel(self, height=20, text="Стоимость: "+ str(data[1]) +" "+data[2],
                                                  anchor='w',
                                                  font=self.labels_font)
-        self.price_label.grid(row=1, column=1)
+        self.price_label.grid(padx=5, pady=5, row=1, column=1, sticky="NW")
 
-        self.unit_label = customtkinter.CTkLabel(self, height=20, text=data[3],
+        self.unit_label = customtkinter.CTkLabel(self, height=20, text="Единица измерения: "+data[3],
                                                  anchor='w',
                                                  font=self.labels_font)
-        self.unit_label.grid(row=1, column=2, sticky="W")
+        self.unit_label.grid(padx=5, pady=5, row=1, column=2, sticky="NW")
 
-        self.url_label = customtkinter.CTkLabel(self, height=20, text=data[4],
+        self.url_label = customtkinter.CTkLabel(self, height=20, text="Ссылка на ресурс: "+data[4],
                                                  anchor='w',
                                                  font=self.url_font)
-        self.url_label.grid(row=2, column=1, sticky="W")
+        self.url_label.grid(padx=5, pady=5, row=2, column=1, columnspan=2, sticky="NW")
         self.url_label.bind("<Button-1>", lambda e: self.clicked_url(data[4]))
 
-        self.screenshot_label = customtkinter.CTkLabel(self, width=202, height=118, fg_color=('#C2C2C2','#5A5A5A'), corner_radius=5,
-                                                       text='', image=self.screenshot_image,
-                                                       cursor='sizing')
-        self.screenshot_label.grid(row=0, column=0, rowspan=2)
-        self.screenshot_label.bind("<Button-1>", lambda e: self.open_view(scale, data, image=data[5]))
-        
         if data_type=='parse':
-            self.date_label = customtkinter.CTkLabel(self, height=20, text=data[6],
+            self.date_label = customtkinter.CTkLabel(self, height=20, text="Информация актуальна на: "+data[6],
                                                  anchor='w',
                                                  font=self.labels_font)
-            self.date_label.grid(row=3, column=0)
+            self.date_label.grid(padx=5, row=3, column=1, columnspan=2, sticky="NW")
         
     def clicked_url(self, url):
         webbrowser.open_new(url)
@@ -630,7 +647,7 @@ class Info_module(customtkinter.CTkFrame):
         if image!= None:
             self.image_view = customtkinter.CTkToplevel(self)
             self.image_view.title('| Просмотр |')
-            self.image_view.geometry(f'{192*scale+10}x{108*scale+10}')
+            self.image_view.geometry(f"{int(192*scale+10)}x{int(108*scale+10)}")
             self.image_view.resizable(width=False, height=False)
             self.image_view.attributes('-topmost', 'true')
 
@@ -767,8 +784,7 @@ class FloatSpinbox(customtkinter.CTkFrame):
                 self.entry.insert(0, str(int(value)))
             if self.count_system=='float':
                 self.entry.insert(0, str(float(value)))
-'''
+
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-'''
