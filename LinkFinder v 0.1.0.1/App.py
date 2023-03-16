@@ -482,7 +482,7 @@ class Options(customtkinter.CTkToplevel):
         self.optionmenu_1r = customtkinter.CTkOptionMenu(self.frame_right,
                                                         width=(master.OPT_WIDTH-30)/2-20,
                                                         height=25,
-                                                        values=config.mix_values(["Dark", "Light", "System"],
+                                                        values=config.mix_values(["Dark", "Light"],
                                                                                 master.config_data['USER_SETTINGS']['theme']),
                                                         font=self.buttons_font,
                                                         command=self.theme_button)

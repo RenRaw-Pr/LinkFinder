@@ -7,7 +7,7 @@ class Database():
         self.curs.executescript(
         """
         CREATE TABLE IF NOT EXISTS REFERENCES_DB
-        (
+        (CODE TEXT NOT NULL,
         NAME TEXT NOT NULL,
         PRICE REAL NOT NULL,
         PRICE_UNIT TEXT NOT NULL,
@@ -16,7 +16,8 @@ class Database():
         SCREENSHOT BLOB);
 
         CREATE TABLE IF NOT EXISTS PARSE_RESULTS
-        (NAME TEXT NOT NULL,
+        (CODE TEXT,
+        NAME TEXT NOT NULL,
         PRICE REAL NOT NULL,
         PRICE_UNIT TEXT NOT NULL,
         UNIT TEXT NOT NULL,
@@ -25,7 +26,8 @@ class Database():
         DATE TEXT NOT NULL);
 
         CREATE TABLE IF NOT EXISTS TEMPORARY_DB
-        (NAME TEXT NOT NULL,
+        (CODE TEXT NOT NULL,
+        NAME TEXT NOT NULL,
         PRICE REAL NOT NULL,
         PRICE_UNIT TEXT NOT NULL,
         UNIT TEXT NOT NULL,
@@ -33,7 +35,8 @@ class Database():
         SCREENSHOT BLOB);
 
         CREATE TABLE IF NOT EXISTS SEARCH_HISTORY
-        (NAME TEXT NOT NULL,
+        (CODE TEXT,
+        NAME TEXT NOT NULL,
         PRICE REAL,
         PRICE_UNIT TEXT NOT NULL,
         UNIT TEXT NOT NULL,
@@ -46,7 +49,7 @@ class Database():
     def close_connection(self):
         self.connect.close()
     
-    # ДЛЯ ИСТОРИИ ------------------- структура: (name, price, price_unit, unit, url, screenshot, num)
+    # ДЛЯ ИСТОРИИ ------------------- структура: (code, name, price, price_unit, unit, url, screenshot, num)
     def delete_history(self):
         self.curs.execute(
         "DELETE FROM SEARCH_HISTORY;")
@@ -63,7 +66,7 @@ class Database():
         self.curs.execute(
         """   
         INSERT INTO SEARCH_HISTORY VALUES
-        (?,?,?,?,?,?,?);
+        (?,?,?,?,?,?,?,?);
         """, data)
         
         self.connect.commit()
@@ -78,7 +81,7 @@ class Database():
             self.curs.execute(
             """   
             INSERT INTO SEARCH_HISTORY VALUES
-            (?,?,?,?,?,?,?);
+            (?,?,?,?,?,?,?,?);
             """, elem)
 
         self.connect.commit()
@@ -94,12 +97,12 @@ class Database():
         self.connect.commit()
         return(res)
 
-    # ДЛЯ ЗАПИСЕЙ ИЗ ДОКУМЕНТОВ ----- структура: (name, price, price_unit, unit, url, screenshot)
+    # ДЛЯ ЗАПИСЕЙ ИЗ ДОКУМЕНТОВ ----- структура: (code, name, price, price_unit, unit, url, screenshot)
     def add_reference(self, data):
         self.curs.execute(
         """   
         INSERT INTO REFERENCES_DB VALUES
-        (?,?,?,?,?,?);
+        (?,?,?,?,?,?,?);
         """, data)
         
         self.connect.commit()
@@ -119,12 +122,12 @@ class Database():
         
         self.connect.commit()
 
-   # ДЛЯ ВРЕМЕННОЙ БАЗЫ ИЗ ДОКУМЕНТА ----- структура: (name, price, price_unit, unit, url, screenshot)
+   # ДЛЯ ВРЕМЕННОЙ БАЗЫ ИЗ ДОКУМЕНТА ----- структура: (code, name, price, price_unit, unit, url, screenshot)
     def add_temporary(self, data):
         self.curs.execute(
         """   
         INSERT INTO TEMPORARY_DB VALUES
-        (?,?,?,?,?,?);
+        (?,?,?,?,?,?,?);
         """, data)
         
         self.connect.commit()
@@ -144,7 +147,7 @@ class Database():
         
         self.connect.commit()
 
-    # ДЛЯ ЗАПИСЕЙ ПАРСЕРА ----------- структура: (name, price, price_unit, unit, url, screenshot, date)
+    # ДЛЯ ЗАПИСЕЙ ПАРСЕРА ----------- структура: (code, name, price, price_unit, unit, url, screenshot, date)
     def add_parse(self, data):
         self.curs.execute(
         """   
@@ -157,7 +160,7 @@ class Database():
         self.curs.execute(
         """   
         INSERT INTO PARSE_RESULTS VALUES
-        (?,?,?,?,?,?,?);
+        (?,?,?,?,?,?,?,?);
         """, data)
         
         self.connect.commit()
@@ -187,7 +190,7 @@ class Database():
     def update_parse_by_name(self, name, url, new_data):
         self.curs.execute(
         f"""
-        UPDATE PARSE_RESULTS SET PRICE = {new_data[0]}, SCREENSHOT = "{new_data[1]}", DATE = DATETIME('now')
+        UPDATE PARSE_RESULTS SET PRICE = {new_data[1]}, SCREENSHOT = "{new_data[2]}", DATE = DATETIME('now')
         WHERE NAME = "{name}" AND URL_ADRESS = "{url}";
         """)
         
