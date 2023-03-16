@@ -7,7 +7,8 @@ class Database():
         self.curs.executescript(
         """
         CREATE TABLE IF NOT EXISTS REFERENCES_DB
-        (NAME TEXT NOT NULL,
+        (
+        NAME TEXT NOT NULL,
         PRICE REAL NOT NULL,
         PRICE_UNIT TEXT NOT NULL,
         UNIT TEXT NOT NULL,
