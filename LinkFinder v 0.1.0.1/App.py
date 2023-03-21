@@ -247,7 +247,8 @@ class Search_options(customtkinter.CTkFrame):
             print("time toggle")
 
     def create_temporary_database(self):
-        self.file_path = fd.askopenfilename()
+        self.file_path = fd.askopenfilename(filetypes=[ 
+            ("text_data_files", "*.csv")])
         self.file_name = os.path.basename(self.file_path)
         if len(self.file_name)>12:
             self.file_name = self.file_name[:13]+"..."
@@ -297,6 +298,7 @@ class Result_data(customtkinter.CTkFrame):
         
         self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
         #размещение инфобоксов и заголовков
+        '''
         if parse==True:
             self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
                                                         text="Результаты парсинга:",
@@ -329,6 +331,7 @@ class Result_data(customtkinter.CTkFrame):
             self.temporary_data = master.master.database.get_temp_by_name("Светодиодный светильник 33 Вт, IP65, с закаленным стеклом   МЕsТАН   LE-ССП-53-033-3773-65Д")
             for key in range(len(self.temporary_data)):
                 self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.parse_data[key], data_type="temp").pack(padx=5, pady=5, fill='x'))
+        '''
 
 # Класс виджета сохранения данных в файл / save to file format frame class
 class Save_to_file(customtkinter.CTkFrame):

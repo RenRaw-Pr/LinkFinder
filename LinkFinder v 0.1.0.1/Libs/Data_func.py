@@ -1,4 +1,6 @@
 import sqlite3 as sl
+import pandas as pd
+
 # Для базы данных
 class Database():
     def __init__(self):
@@ -12,7 +14,7 @@ class Database():
         PRICE REAL NOT NULL,
         PRICE_UNIT TEXT NOT NULL,
         UNIT TEXT NOT NULL,
-        URL_ADRESS TEXT NOT NULL,
+        URL_ADRESS TEXT,
         SCREENSHOT BLOB);
 
         CREATE TABLE IF NOT EXISTS PARSE_RESULTS
@@ -201,3 +203,36 @@ class Database():
         "DELETE FROM PARSE_RESULTS;")
         
         self.connect.commit()
+
+# функция для создания временной базы данных из файла
+def create_temporary_database_from_csv(path, code_index, name_index, price_index, unit_index, url_index=None, screenshot_index=None):
+    database = Database()
+    database.delete_temporary()
+
+    data = pd.read_csv(path, sep=';')
+
+    # Удаление пустых строк, затем столбцов
+    data.dropna(axis=0, inplace=True)
+    data.dropna(axis=1, inplace=True)
+    
+    # Создание словарей регулярных выражений для замены повторяющихся значений
+    unit_replace_dict = {
+        'шт\S+':'шт',
+        'комп\S+':'комплект',
+        'ка\S+':'картридж',
+        'уп\S+':'упаковка',
+    }
+
+    # Замена данных в соответствии с заданными словарями
+    data[unit_index].replace(unit_replace_dict, regex=True, inplace=True)
+
+    # Редактирование данных и запись
+    symbols_for_replace = '- ;,.\/:!?+=#@$^&'
+    for row in data.itertuples():
+        database.add_temporary((row[code_index].lstrip(symbols_for_replace),
+                                row[name_index].lstrip(symbols_for_replace),
+                                row[price_index],'RUB',
+                                row[unit_index],
+                                row[url_index],
+                                row[screenshot_index]))
+    database.close_connection()
