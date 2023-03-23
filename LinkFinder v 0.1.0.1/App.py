@@ -248,10 +248,15 @@ class Search_options(customtkinter.CTkFrame):
 
     def create_temporary_database(self):
         self.file_path = fd.askopenfilename(filetypes=[ 
-            ("text_data_files", "*.csv")])
+            ("data tables", "*.csv")])
+        db.create_temporary_database_from_csv(path=self.file_path,
+                                              code_index=1,
+                                              name_index=2,
+                                              price_index=5,
+                                              unit_index=3)
         self.file_name = os.path.basename(self.file_path)
-        if len(self.file_name)>12:
-            self.file_name = self.file_name[:13]+"..."
+        if len(self.file_name)>10:
+            self.file_name = self.file_name[:10]+"..."
         if self.file_name != "":
             self.file_choose_button.configure(text="Выбрано: " + self.file_name)
             self.master.master.config_data['SEARCH_SETTINGS']['temporary_base'] = self.file_name
