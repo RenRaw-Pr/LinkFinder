@@ -33,7 +33,7 @@ class Database():
         PRICE REAL NOT NULL,
         PRICE_UNIT TEXT NOT NULL,
         UNIT TEXT NOT NULL,
-        URL_ADRESS TEXT NOT NULL,
+        URL_ADRESS TEXT ,
         SCREENSHOT BLOB);
 
         CREATE TABLE IF NOT EXISTS SEARCH_HISTORY
@@ -210,15 +210,10 @@ def get_csv(path):
     data.dropna(axis=1, how='all', inplace=True)
     return data
 
-'''
-def create_temporary_database_from_csv(path, code_index, name_index, price_index, unit_index, price_unit='RUB', url_index=None, screenshot_index=None):
+def create_temporary_database_from_csv(data, index_tuple):
     database = Database()
     database.delete_temporary()
 
-    data = pd.read_csv(path, sep=';')
-    data.dropna(axis=1, how='all', inplace=True)
-    #data = data.iloc[:,[code_index,name_index,price_index,unit_index]]
-    
     # Создание словарей регулярных выражений для замены повторяющихся значений
     unit_replace_dict = {
         'шт\S+':'шт',
@@ -228,33 +223,59 @@ def create_temporary_database_from_csv(path, code_index, name_index, price_index
     }
 
     # Замена данных в соответствии с заданными словарями
-    data[data.columns[unit_index]].replace(unit_replace_dict, regex=True, inplace=True)
+    data[index_tuple["unit_index"]].replace(unit_replace_dict, regex=True, inplace=True)
     # Редактирование данных и запись
     symbols_for_replace = '- ;,.\/:!?+=#@$^&'
-    
-    if url_index != None and screenshot_index == None:
+
+    if index_tuple["url_index"] != None and index_tuple["screenshot_index"] == None:
+        data = data.loc[index_tuple["start_row"]:,[
+            index_tuple["code_index"],
+            index_tuple["name_index"],
+            index_tuple["price_index"],
+            index_tuple["unit_index"],
+            index_tuple["url_index"]
+        ]]
+        data.dropna(axis=0, how='any', inplace=True)
         for row in data.itertuples():
-            database.add_temporary((row[code_index].lstrip(symbols_for_replace),
-                                    row[name_index].lstrip(symbols_for_replace),
-                                    row[price_index], price_unit,
-                                    row[unit_index],
-                                    row[url_index],
+            database.add_temporary((row[1].lstrip(symbols_for_replace),
+                                    row[2].lstrip(symbols_for_replace),
+                                    row[3], index_tuple["price_unit"],
+                                    row[4],
+                                    row[5],
                                     None))
-    if url_index == None and screenshot_index == None:
+    
+    if index_tuple["url_index"] == None and index_tuple["screenshot_index"] == None:
+        data = data.loc[index_tuple["start_row"]:,[
+            index_tuple["code_index"],
+            index_tuple["name_index"],
+            index_tuple["price_index"],
+            index_tuple["unit_index"]
+        ]]
+        data.dropna(axis=0, how='any', inplace=True)
         for row in data.itertuples():
-            database.add_temporary((row[code_index].lstrip(symbols_for_replace),
-                                    row[name_index].lstrip(symbols_for_replace),
-                                    row[price_index], price_unit,
-                                    row[unit_index],
+            database.add_temporary((row[1].lstrip(symbols_for_replace),
+                                    row[2].lstrip(symbols_for_replace),
+                                    row[3], index_tuple["price_unit"],
+                                    row[4],
                                     None,
                                     None))
-    if url_index != None and screenshot_index != None:
+
+    if index_tuple["url_index"] != None and index_tuple["screenshot_index"] != None:
+        data = data.loc[index_tuple["start_row"]:,[
+            index_tuple["code_index"],
+            index_tuple["name_index"],
+            index_tuple["price_index"],
+            index_tuple["unit_index"],
+            index_tuple["url_index"],
+            index_tuple["screenshot_index"]
+        ]]
+        data.dropna(axis=0, how='any', inplace=True)
         for row in data.itertuples():
-            database.add_temporary((row[code_index].lstrip(symbols_for_replace),
-                                    row[name_index].lstrip(symbols_for_replace),
-                                    row[price_index], price_unit,
-                                    row[unit_index],
-                                    row[url_index],
-                                    row[screenshot_index]))
+            database.add_temporary((row[1].lstrip(symbols_for_replace),
+                                    row[2].lstrip(symbols_for_replace),
+                                    row[3], index_tuple["price_unit"],
+                                    row[4],
+                                    row[5],
+                                    row[6]))
+    
     database.close_connection()
-'''

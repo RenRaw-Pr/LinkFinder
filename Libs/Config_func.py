@@ -13,7 +13,17 @@ def create_config():
     
     config.add_section('SEARCH_SETTINGS')
     config.set('SEARCH_SETTINGS', 'temporary_base', '')
+    
     config.set('SEARCH_SETTINGS', 'history_limit', '0')
+    config.set('SEARCH_SETTINGS', 'scale', '4')
+    
+    config.set('SEARCH_SETTINGS', 'using_parser', 'False')
+    config.set('SEARCH_SETTINGS', 'using_database', 'False')
+    config.set('SEARCH_SETTINGS', 'using_temporary', 'False')
+
+    config.set('SEARCH_SETTINGS', 'caps', 'False')
+    config.set('SEARCH_SETTINGS', 'symbols', 'False')
+    config.set('SEARCH_SETTINGS', 'only_nums', 'False')
 
     config.add_section('FILE_SAVE_SETTINGS')
 
