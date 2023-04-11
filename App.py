@@ -25,6 +25,7 @@ class App(customtkinter.CTk):
 
         self.title('| LinkFinder v 0.1.0.3 |')
         self.geometry(f"{self.APP_WIDTH}x{self.APP_HEIGHT}+{int(self.X_APP)}+{int(self.Y_APP)}")
+        self.minsize(240,480)
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Размещаем элементы главного окна
@@ -90,18 +91,28 @@ class App(customtkinter.CTk):
     
     # Функция обновления параметров / refresh app with new config parametres
     def refresh_by_config(self):
+        config.set_config(self)
         customtkinter.set_appearance_mode(self.config_data['USER_SETTINGS']['theme'])
+        
+        self.left_main_frame.destroy()
+        self.left_main_frame = Left_main(self)
+        self.left_main_frame.pack(side=tkinter.LEFT, fill='y')
+        
+        self.search_frame.destroy()
+        self.search_frame = Search(self)
+        self.search_frame.pack(side=tkinter.TOP, fill='x', padx=5, pady=5)
+        
         self.result_and_save_frame.destroy()
         self.result_and_save_frame = Result_and_save(self)
         self.result_and_save_frame.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True, padx=5, pady=5)
-
+        
 #============================================================================================================
 # Класс основной левой группы виджетов / class of left frame
 class Left_main(customtkinter.CTkFrame):
     def __init__(self, master):
-        super().__init__(master, width=220, corner_radius=0, bg_color="transparent")
-        self.main_opt = Options_list(self).pack(padx=5, pady=5)
-        self.serch_opt = Search_options(self, master.text_colors).pack(padx=5, pady=5)
+        super().__init__(master, width=240, corner_radius=0, bg_color="transparent")
+        self.main_opt = Options_list(self).pack(padx=5, pady=5, fill='x')
+        self.search_opt = Search_options(self, master.text_colors).pack(padx=5, pady=5)
         self.save_opt = Save_options(self, master.text_colors).pack(padx=5, pady=5, expand=True, fill='y')
 
 # Класс виджета поисковой строки / class of search frame
@@ -161,8 +172,9 @@ class Result_and_save(tkinter.PanedWindow):
 # Класс виджета настроек / settings widget class
 class Options_list(customtkinter.CTkFrame):
     def __init__(self, master):
-        super().__init__(master, width=200, height=40, corner_radius=10)
+        super().__init__(master, height=40, corner_radius=10)
         #self.settings_img = customtkinter.CTkImage(Image.open('./Design/icon-settings-outline.png'), size=(15,15))
+        self.width = 230
         self.hover_color = ('#B0AFB1','#515152')
         self.symbols_font = customtkinter.CTkFont("Avenir Next", 16, 'normal')
 
@@ -178,7 +190,7 @@ class Options_list(customtkinter.CTkFrame):
                                                 text="\u2699", font=self.symbols_font, text_color="#0267A7",                            
                                                 command=settings,
                                                 )
-        self.button_1.pack(padx=5, pady=5, side="left")
+        self.button_1.pack(padx=[5,0], pady=5, side="left")
         
         self.button_2 = customtkinter.CTkButton(self,
                                                 height=30, width=30,
@@ -186,26 +198,27 @@ class Options_list(customtkinter.CTkFrame):
                                                 border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
                                                 text='',
                                                 state=tkinter.DISABLED)
-        self.button_2.pack(padx=0, pady=5, side="left")
+        self.button_2.pack(padx=[5,0], pady=5, side="left")
 
         self.button_3 = customtkinter.CTkButton(self,
-                                                height=30, width=120,
+                                                height=30,
                                                 corner_radius=8, border_width=1,
                                                 border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
                                                 text='',
                                                 state=tkinter.DISABLED)
-        self.button_3.pack(padx=5, pady=5, side="left", expand=True)
+        self.button_3.pack(padx=[5,0], pady=5, side="left", expand=True)
 
 # Класс виджета настроек поиска / search settings widget class
 class Search_options(customtkinter.CTkFrame):
     def __init__(self, master, text_colors):
-        super().__init__(master, width=200, height=500, corner_radius=10)
+        super().__init__(master, height=500, corner_radius=10)
         
+        self.width = 230
         self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
         self.labels_font = customtkinter.CTkFont("Avenir Next", 14, 'normal')
 
         self.namebox_1 = customtkinter.CTkLabel(self, text="Настройки поиска", font=self.labels_font,
-                                                width=190, height=25)
+                                                width=self.width-10, height=25)
         self.namebox_1.grid(column=0, row=0, padx=5, pady=[5,0], sticky="n")
 
         self.parse_switch = customtkinter.CTkSwitch(self, text="Парсинг", font=self.buttons_font,
@@ -224,33 +237,33 @@ class Search_options(customtkinter.CTkFrame):
         self.temporary_base_switch.grid(column=0, row=3, padx=5, pady=[5,0], sticky="w")
 
         self.namebox_2 = customtkinter.CTkLabel(self, text="Импорт данных из файла", font=self.labels_font,
-                                                width=190, height=25)
+                                                width=self.width-10, height=25)
         self.namebox_2.grid(column=0, row=4, padx=5, pady=[5,0], sticky="n")
         
         self.check_last_database()
         self.file_choose_button = customtkinter.CTkButton(self, text=self.button_text, font=self.buttons_font,
-                                                            width=190, height=20,
+                                                            width=self.width-10, height=20,
                                                             text_color=text_colors,
                                                             command=lambda: self.create_temporary_database())
         self.file_choose_button.grid(column=0, row=5, padx=5, pady=[5,0], sticky="w")
 
         self.namebox_3 = customtkinter.CTkLabel(self, text="Настройки предобработки", font=self.labels_font,
-                                                width=190, height=25)
+                                                width=self.width-10, height=25)
         self.namebox_3.grid(column=0, row=6, padx=5, pady=[5,0], sticky="n")
 
         self.caps_switch = customtkinter.CTkSwitch(self, text="В нижний регистр", font=self.buttons_font,
                                                     onvalue="True", offvalue="False", variable=customtkinter.StringVar(value=master.master.config_data['SEARCH_SETTINGS']['caps']),
-                                                    command=None)
+                                                    command=lambda: self.caps_switch_func(master))
         self.caps_switch.grid(column=0, row=7, padx=5, pady=[5,0], sticky="w")
 
         self.symbols_switch = customtkinter.CTkSwitch(self, text="Убрать знаки", font=self.buttons_font,
                                                     onvalue="True", offvalue="False", variable=customtkinter.StringVar(value=master.master.config_data['SEARCH_SETTINGS']['symbols']),
-                                                    command=None)
+                                                    command=lambda: self.symbols_switch_func(master))
         self.symbols_switch.grid(column=0, row=8, padx=5, pady=[5,0], sticky="w")
 
         self.nums_switch = customtkinter.CTkSwitch(self, text="Только параметры", font=self.buttons_font,
                                                     onvalue="True", offvalue="False", variable=customtkinter.StringVar(value=master.master.config_data['SEARCH_SETTINGS']['only_nums']),
-                                                    command=None)
+                                                    command=lambda: self.nums_switch_func(master))
         self.nums_switch.grid(column=0, row=9, padx=5, pady=[5,0], sticky="w")
     
     def check_last_database(self):
@@ -274,6 +287,18 @@ class Search_options(customtkinter.CTkFrame):
         master.master.config_data['SEARCH_SETTINGS']['using_temporary']=self.temporary_base_switch.get()
         config.set_config(master.master)
 
+    def caps_switch_func(self, master):
+        master.master.config_data['SEARCH_SETTINGS']['caps']=self.caps_switch.get()
+        config.set_config(master.master)
+    
+    def symbols_switch_func(self, master):
+        master.master.config_data['SEARCH_SETTINGS']['symbols']=self.symbols_switch.get()
+        config.set_config(master.master)
+    
+    def nums_switch_func(self, master):
+        master.master.config_data['SEARCH_SETTINGS']['only_nums']=self.nums_switch.get()
+        config.set_config(master.master)
+
     def create_temporary_database(self):
         self.file_path = fd.askopenfilename(filetypes=[ 
             ("data tables", "*.csv")])
@@ -283,19 +308,40 @@ class Search_options(customtkinter.CTkFrame):
 # Класс виджета настроек сохранения в файл / save to file widget class
 class Save_options(customtkinter.CTkFrame):
     def __init__(self, master, text_colors):
-        super().__init__(master, width=200, corner_radius=10)
+        super().__init__(master, corner_radius=10)
         
+        self.width = 230
         self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
         self.labels_font = customtkinter.CTkFont("Avenir Next", 14, 'normal')
+        self.instructions_font = customtkinter.CTkFont("Avenir Next", 9, 'normal')
         
         self.namebox = customtkinter.CTkLabel(self, text="Настройки сохранения", font=self.labels_font,
-                                                width=190, height=30)
-        self.namebox.grid(column=0, row=0, padx=5, pady=0, sticky="n")
+                                                width=self.width-10, height=30)
+        self.namebox.grid(column=0, row=0, padx=5, pady=[5,0], sticky="n")
 
-        self.file_choose_button = customtkinter.CTkButton(self, text="Выбрать файл", font=self.buttons_font,
-                                                            width=190, height=20,
-                                                            text_color=text_colors)
-        self.file_choose_button.grid(column=0, row=1, padx=5, pady=5, sticky="w")
+        self.choose_label = customtkinter.CTkLabel(self, text="Выбор файла, в который\nнужно сохранить информацию", font=self.instructions_font,
+                                                    width=90, height=30, justify='left')
+        self.choose_label.grid(column=0, row=1, padx=[5,0], pady=[5,0], sticky="w")
+
+        self.file_choose_button = customtkinter.CTkButton(self, text="Выбрать", font=self.buttons_font,
+                                                            width=90, height=20,
+                                                            text_color=text_colors, command = None)
+        self.file_choose_button.grid(column=0, row=1, padx=5, pady=[5,0], sticky="e")
+
+        self.file_create_button = customtkinter.CTkButton(self, text="Создать", font=self.buttons_font,
+                                                            width=90, height=20,
+                                                            text_color=text_colors, command=lambda:self.create())
+        self.file_create_button.grid(column=0, row=2, padx=5, pady=[5,0], sticky="e")
+
+        self.choose_label = customtkinter.CTkLabel(self, text="Создание файла, в который\nнужно сохранить информацию", font=self.instructions_font,
+                                                    width=90, height=30, justify='left')
+        self.choose_label.grid(column=0, row=2, padx=[5,0], pady=[5,0], sticky="w")
+    
+    def choose(self):
+        pass
+
+    def create(self):
+        self.choose_dir = Choose_Dir(self)
 
 # Класс виджета вывода данных / result data frame class
 class Result_data(customtkinter.CTkFrame):
@@ -593,11 +639,15 @@ class Options(customtkinter.CTkToplevel):
                                     confirm_button=True, decline_button=True, confirm_button_function= lambda: db.Database().delete_history())
 
     def delete_temporary_button_func(self, master):
+        def deleting(master):
+            db.Database().delete_temporary()
+            master.config_data['SEARCH_SETTINGS']['temporary_base'] = ''
+            master.refresh_by_config()
         self.messange = Messange(parent=self, master=master, cl='info',
                                     title='| Очистка временной базы |',
                                     msg = "Временная база данных будет\nбезвозвратно удалена",
                                     skip_button=False,
-                                    confirm_button=True, decline_button=True, confirm_button_function=lambda: db.Database().delete_temporary())
+                                    confirm_button=True, decline_button=True, confirm_button_function=lambda: deleting(master))
     
     def delete_parser_history_button_func(self, master):
         self.messange = Messange(parent=self, master=master, cl='info',
@@ -951,7 +1001,73 @@ class View_CSV(customtkinter.CTkToplevel):
     def handle_click(self, event):
         if self.table.identify_region(event.x, event.y) == "separator":
             return "break"
-    
+
+# Окно для выбора места создания файла
+class Choose_Dir(customtkinter.CTkToplevel):
+    def __init__(self, master):
+        super().__init__(master)
+        self.title("| Выбор папки |")
+        self.geometry(f"460x155+{int((self.winfo_screenwidth()-460)/2)}+{int((self.winfo_screenheight()-155)/2)}")
+        self.resizable(width=False, height=False)
+        self.attributes('-topmost', 'true')
+
+        self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
+        self.labels_font = customtkinter.CTkFont("Avenir Next", 14, 'normal')
+        self.instructions_font = customtkinter.CTkFont("Avenir Next", 8, 'normal')
+
+        self.namebox_1 = customtkinter.CTkLabel(self, text="Папка для сохранения", font=self.labels_font,
+                                                width=190, height=25)
+        self.namebox_1.grid(column=0, row=0, padx=5)
+
+        self.check_directory()
+        self.directory_choose_button = customtkinter.CTkButton(self, text=self.button_text, font=self.buttons_font,
+                                                            width=190, height=20,
+                                                            command = None)
+        self.directory_choose_button.grid(column=0, row=1, padx=5)
+
+        self.namebox_2 = customtkinter.CTkLabel(self, text="Расширение файла", font=self.labels_font,
+                                                width=190, height=25)
+        self.namebox_2.grid(column=0, row=2, padx=5)
+
+        self.file_format_button = customtkinter.CTkOptionMenu(self,
+                                                        width=190, height=25, corner_radius=5,
+                                                        values=['.csv', '.xlsx', '.json'],
+                                                        font=self.buttons_font,
+                                                        command=None)
+        self.file_format_button.grid(column=0, row=3, padx=5)
+
+        self.namebox_3 = customtkinter.CTkLabel(self, text="Источник данных", font=self.labels_font,
+                                                width=190, height=25)
+        self.namebox_3.grid(column=0, row=4, padx=5)
+
+        self.data_source_button = customtkinter.CTkOptionMenu(self,
+                                                        width=190, height=25, corner_radius=5,
+                                                        values=['Заполненная форма', 'История парсинга', 'Записи парсера', 'Временная база', 'Локальная база'],
+                                                        font=self.buttons_font,
+                                                        command=None)
+        self.data_source_button.grid(column=0, row=5, padx=5)
+
+        self.instruction = customtkinter.CTkTextbox(self, width=250, height=115,
+                                                    corner_radius=5, font=self.buttons_font, activate_scrollbars=False,
+                                                    state='normal')
+        self.instruction.insert('0.0','\nФайл с сохраненными в нем данными\nбудет находиться в выбранной папке,\nтакже к файлу будет приложена\nпапка со скриншотами, при наличии.')
+        self.instruction.configure(state='disabled')
+        self.instruction.grid(column=1, row=0, padx=5, rowspan=5)
+
+        self.commit_button = customtkinter.CTkButton(self, text="Создать", font=self.buttons_font,
+                                                            width=100, height=20,
+                                                            command = None)
+        self.commit_button.grid(column=1, row=5, padx=5, sticky='ne')
+
+    def check_directory(self):
+        self.dir_path = self.master.master.master.config_data['FILE_SAVE_SETTINGS']['save_dir']
+        self.dir_name = os.path.basename(self.dir_path)
+        if len(self.dir_name)>20: self.dir_name = self.dir_name[:10]+"..."
+        if self.dir_name == "":
+            self.button_text = "Выбрать"
+        else:
+            self.button_text = ".../"+self.dir_name
+
 if __name__ == "__main__":
     app = App()
     app.mainloop()

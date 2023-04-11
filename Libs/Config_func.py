@@ -26,7 +26,14 @@ def create_config():
     config.set('SEARCH_SETTINGS', 'only_nums', 'False')
 
     config.add_section('FILE_SAVE_SETTINGS')
-
+    # используется при создании файла
+    config.set('FILE_SAVE_SETTINGS', 'file_format', 'csv') # xlsx, csv, json
+    config.set('FILE_SAVE_SETTINGS', 'file_name', '') # задается пользователем
+    config.set('FILE_SAVE_SETTINGS', 'save_dir', str(os.path.expanduser("~/Downloads"))) # место сохранения экспортируемого файла (по умолчанию "загрузки")
+    
+    # используется при сохранении в файл
+    config.set('FILE_SAVE_SETTINGS', 'file_direction', '')
+    config.set('FILE_SAVE_SETTINGS', 'data_source', 'form') # form, parser_history, temporary, parsed, reference
 
     with open(path, "w") as config_file:
         config.write(config_file)

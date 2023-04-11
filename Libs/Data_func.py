@@ -124,6 +124,16 @@ class Database():
         
         self.connect.commit()
 
+    def get_ref(self):
+        self.curs.execute(
+        """
+        SELECT * FROM REFERENCES_DB
+        """,)
+
+        res = self.curs.fetchall()
+        self.connect.commit()
+        return(res)
+
    # ДЛЯ ВРЕМЕННОЙ БАЗЫ ИЗ ДОКУМЕНТА ----- структура: (code, name, price, price_unit, unit, url, screenshot)
     def add_temporary(self, data):
         self.curs.execute(
@@ -149,6 +159,16 @@ class Database():
         
         self.connect.commit()
 
+    def get_temp(self):
+        self.curs.execute(
+        """
+        SELECT * FROM TEMPORARY_DB
+        """,)
+
+        res = self.curs.fetchall()
+        self.connect.commit()
+        return(res)
+    
     # ДЛЯ ЗАПИСЕЙ ПАРСЕРА ----------- структура: (code, name, price, price_unit, unit, url, screenshot, date)
     def add_parse(self, data):
         self.curs.execute(
@@ -204,6 +224,16 @@ class Database():
         
         self.connect.commit()
 
+    def get_parse(self):
+        self.curs.execute(
+        """
+        SELECT * FROM PARSE_RESULTS
+        """,)
+
+        res = self.curs.fetchall()
+        self.connect.commit()
+        return(res)
+    
 # функция для создания временной базы данных из файла
 def get_csv(path):
     data = pd.read_csv(path, sep=';')
@@ -279,3 +309,25 @@ def create_temporary_database_from_csv(data, index_tuple):
                                     row[6]))
     
     database.close_connection()
+
+# функции для добавления создания файла из базы данных
+def create_csv(path, data, data_source):
+    # Обрабатываем тип заголовка для данных:
+    if data_source in ["form", "temporary", "parsed", "reference"]:
+        columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота"]
+    if data_source in ["parser_history"]:
+        columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота", "Номер запроса"]
+    # Запись в файл
+    data = pd.DataFrame(data, columns=columns)
+    with open(path, 'w') as f: data.to_csv(f, index=False)
+
+# функции для добавления данных в уже существующий файл
+def add_to_csv(path, data, data_source):
+    # Обрабатываем тип заголовка для данных:
+    if data_source in ["form", "temporary", "parsed", "reference"]:
+        columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота"]
+    if data_source in ["parser_history"]:
+        columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота", "Номер запроса"]
+    # Запись в файл
+    data = pd.DataFrame(data, columns=columns)
+    with open(path, 'a') as f: data.to_csv(f, index=False)
