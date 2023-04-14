@@ -46,7 +46,7 @@ class App(customtkinter.CTk):
         self.text_colors = ("#FFFAFA")
 
         self.APP_WIDTH = 780
-        self.APP_HEIGHT = 520
+        self.APP_HEIGHT = 480
 
         self.MSG_WIDTH = 400
         self.MSG_HEIGHT = 200
@@ -325,7 +325,7 @@ class Save_options(customtkinter.CTkFrame):
 
         self.file_choose_button = customtkinter.CTkButton(self, text="Выбрать", font=self.buttons_font,
                                                             width=90, height=20,
-                                                            text_color=text_colors, command = None)
+                                                            text_color=text_colors, command = lambda:self.choose())
         self.file_choose_button.grid(column=0, row=1, padx=5, pady=[5,0], sticky="e")
 
         self.file_create_button = customtkinter.CTkButton(self, text="Создать", font=self.buttons_font,
@@ -338,7 +338,7 @@ class Save_options(customtkinter.CTkFrame):
         self.choose_label.grid(column=0, row=2, padx=[5,0], pady=[5,0], sticky="w")
     
     def choose(self):
-        pass
+        self.choose_file = Choose_Save_File(self)
 
     def create(self):
         self.choose_dir = Choose_Dir(self)
@@ -500,7 +500,6 @@ class Options(customtkinter.CTkToplevel):
         self.title('| Настройки | Options |')
         self.geometry(f"{master.OPT_WIDTH}x{master.OPT_HEIGHT}+{int(master.X_OPT)}+{int(master.Y_OPT)}")
         self.resizable(width=False, height=False)
-        self.attributes('-topmost', 'true')
         
         self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
         self.labels_font = customtkinter.CTkFont("Avenir Next", 14, 'normal')
@@ -1007,41 +1006,45 @@ class Choose_Dir(customtkinter.CTkToplevel):
     def __init__(self, master):
         super().__init__(master)
         self.title("| Выбор папки |")
-        self.geometry(f"460x155+{int((self.winfo_screenwidth()-460)/2)}+{int((self.winfo_screenheight()-155)/2)}")
+        self.geometry(f"480x155+{int((self.winfo_screenwidth()-480)/2)}+{int((self.winfo_screenheight()-155)/2)}")
         self.resizable(width=False, height=False)
-        self.attributes('-topmost', 'true')
 
         self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
         self.labels_font = customtkinter.CTkFont("Avenir Next", 14, 'normal')
         self.instructions_font = customtkinter.CTkFont("Avenir Next", 8, 'normal')
 
         self.namebox_1 = customtkinter.CTkLabel(self, text="Папка для сохранения", font=self.labels_font,
-                                                width=190, height=25)
+                                                width=210, height=25)
         self.namebox_1.grid(column=0, row=0, padx=5)
 
         self.check_directory()
         self.directory_choose_button = customtkinter.CTkButton(self, text=self.button_text, font=self.buttons_font,
-                                                            width=190, height=20,
-                                                            command = None)
+                                                            width=210, height=20,
+                                                            command = lambda: self.choose_new_dir(master))
         self.directory_choose_button.grid(column=0, row=1, padx=5)
 
-        self.namebox_2 = customtkinter.CTkLabel(self, text="Расширение файла", font=self.labels_font,
-                                                width=190, height=25)
+        self.namebox_2 = customtkinter.CTkLabel(self, text="Название и формат файла", font=self.labels_font,
+                                                width=210, height=25)
         self.namebox_2.grid(column=0, row=2, padx=5)
 
+        self.file_name_entry = customtkinter.CTkEntry(self, textvariable=customtkinter.StringVar(value="Unnamed"),
+                                            width=140, height=25,
+                                            corner_radius=8, border_width=1)
+        self.file_name_entry.grid(column=0, row=3, padx=5, sticky='nw')
+
         self.file_format_button = customtkinter.CTkOptionMenu(self,
-                                                        width=190, height=25, corner_radius=5,
+                                                        width=65, height=25, corner_radius=5,
                                                         values=['.csv', '.xlsx', '.json'],
                                                         font=self.buttons_font,
                                                         command=None)
-        self.file_format_button.grid(column=0, row=3, padx=5)
+        self.file_format_button.grid(column=0, row=3, padx=5, sticky='ne')
 
         self.namebox_3 = customtkinter.CTkLabel(self, text="Источник данных", font=self.labels_font,
-                                                width=190, height=25)
+                                                width=210, height=25)
         self.namebox_3.grid(column=0, row=4, padx=5)
 
         self.data_source_button = customtkinter.CTkOptionMenu(self,
-                                                        width=190, height=25, corner_radius=5,
+                                                        width=210, height=25, corner_radius=5,
                                                         values=['Заполненная форма', 'История парсинга', 'Записи парсера', 'Временная база', 'Локальная база'],
                                                         font=self.buttons_font,
                                                         command=None)
@@ -1050,14 +1053,19 @@ class Choose_Dir(customtkinter.CTkToplevel):
         self.instruction = customtkinter.CTkTextbox(self, width=250, height=115,
                                                     corner_radius=5, font=self.buttons_font, activate_scrollbars=False,
                                                     state='normal')
-        self.instruction.insert('0.0','\nФайл с сохраненными в нем данными\nбудет находиться в выбранной папке,\nтакже к файлу будет приложена\nпапка со скриншотами, при наличии.')
+        self.instruction.insert('0.0','\nФайл с сохраненными в нем данными\nбудет находиться в выбранной папке,\nтакже к файлу, при наличии,\nбудет приложена\nпапка со скриншотами.')
         self.instruction.configure(state='disabled')
         self.instruction.grid(column=1, row=0, padx=5, rowspan=5)
 
         self.commit_button = customtkinter.CTkButton(self, text="Создать", font=self.buttons_font,
                                                             width=100, height=20,
-                                                            command = None)
+                                                            command = lambda: self.create_file())
         self.commit_button.grid(column=1, row=5, padx=5, sticky='ne')
+
+        self.decline_button = customtkinter.CTkButton(self, text="Отменить", font=self.buttons_font,
+                                                            width=100, height=20,
+                                                            command=lambda:self.destroy())
+        self.decline_button.grid(column=1, row=5, padx=5, sticky='nw')
 
     def check_directory(self):
         self.dir_path = self.master.master.master.config_data['FILE_SAVE_SETTINGS']['save_dir']
@@ -1067,6 +1075,128 @@ class Choose_Dir(customtkinter.CTkToplevel):
             self.button_text = "Выбрать"
         else:
             self.button_text = ".../"+self.dir_name
+    
+    def choose_new_dir(self, master):
+        self.dir_path = fd.askdirectory()
+        if self.dir_path != '': 
+            self.dir_name = os.path.basename(self.dir_path)
+            if len(self.dir_name)>20: self.dir_name = self.dir_name[:10]+"..."
+            self.directory_choose_button.configure(text = ".../"+self.dir_name)
+            master.master.master.config_data['FILE_SAVE_SETTINGS']['save_dir'] = self.dir_path
+            config.set_config(master.master.master)
+
+    def create_file(self):
+        self.full_path = self.dir_path+"/"+self.file_name_entry.get()+self.file_format_button.get() # полный путь для создания
+        if self.data_source_button.get()=="Заполненная форма": 
+            self.data = None 
+            self.data_source='form'
+        if self.data_source_button.get()=="История парсинга": 
+            self.data=db.Database().get_all_history() 
+            self.data_source='parser_history'
+        if self.data_source_button.get()=="Записи парсера": 
+            self.data=db.Database().get_parse()
+            self.data_source='parsed'
+        if self.data_source_button.get()=="Временная база": 
+            self.data=db.Database().get_temp()
+            self.data_source='temporary'
+        if self.data_source_button.get()=="Локальная база": 
+            self.data=db.Database().get_ref()
+            self.data_source='reference'
+        if self.file_format_button.get()=='.csv': db.create_csv(self.full_path, self.data, self.data_source)
+        #if self.file_format_button.get()=='.xlsx': db.create_csv(self.full_path, self.data, self.data_source)
+        if self.file_format_button.get()=='.json': db.create_json(self.full_path, self.data, self.data_source)
+        self.destroy()
+
+# Окно для выбора файла сохранения
+class Choose_Save_File(customtkinter.CTkToplevel):
+    def __init__(self, master):
+        super().__init__(master)
+        self.title("| Выбор файла |")
+        self.geometry(f"460x110+{int((self.winfo_screenwidth()-460)/2)}+{int((self.winfo_screenheight()-110)/2)}")
+        self.resizable(width=False, height=False)
+
+        self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
+        self.labels_font = customtkinter.CTkFont("Avenir Next", 14, 'normal')
+        self.instructions_font = customtkinter.CTkFont("Avenir Next", 8, 'normal')
+
+        self.namebox_1 = customtkinter.CTkLabel(self, text="Файл для сохранения", font=self.labels_font,
+                                                width=190, height=25)
+        self.namebox_1.grid(column=0, row=0, padx=5)
+
+        self.check_file()
+        self.file_choose_button = customtkinter.CTkButton(self, text=self.button_text, font=self.buttons_font,
+                                                            width=190, height=20,
+                                                            command=lambda: self.choose_new_file(master))
+        self.file_choose_button.grid(column=0, row=1, padx=5)
+
+        self.namebox_3 = customtkinter.CTkLabel(self, text="Источник данных", font=self.labels_font,
+                                                width=190, height=25)
+        self.namebox_3.grid(column=0, row=2, padx=5)
+
+        self.data_source_button = customtkinter.CTkOptionMenu(self,
+                                                        width=190, height=25, corner_radius=5,
+                                                        values=['Заполненная форма', 'История парсинга', 'Записи парсера', 'Временная база', 'Локальная база'],
+                                                        font=self.buttons_font,
+                                                        command=None)
+        self.data_source_button.grid(column=0, row=3, padx=5)
+
+        self.instruction = customtkinter.CTkTextbox(self, width=250, height=75,
+                                                    corner_radius=5, font=self.buttons_font, activate_scrollbars=False,
+                                                    state='normal')
+        self.instruction.insert('0.0','Данные будут добавлены в\nвыбранный файл, в отдельную папку,\nпри наличии, будут\nсохранены скриншоты.')
+        self.instruction.configure(state='disabled')
+        self.instruction.grid(column=1, row=0, padx=5, pady=[0,5], rowspan=3)
+
+        self.commit_button = customtkinter.CTkButton(self, text="Создать", font=self.buttons_font,
+                                                            width=100, height=20,
+                                                            command=lambda: self.save_to_file())
+        self.commit_button.grid(column=1, row=0, padx=5, sticky='se', rowspan=4)
+
+        self.decline_button = customtkinter.CTkButton(self, text="Отменить", font=self.buttons_font,
+                                                            width=100, height=20,
+                                                            command=lambda:self.destroy())
+        self.decline_button.grid(column=1, row=0, padx=5, sticky='sw', rowspan=4)
+
+    def check_file(self):
+        self.file_path = self.master.master.master.config_data['FILE_SAVE_SETTINGS']['file_direction']
+        self.file_ext = os.path.splitext(self.file_path)[1]
+        self.file_name = os.path.basename(self.file_path)
+        if len(self.file_name)>20: self.file_name = self.file_name[:10]+"..."
+        if self.file_name == "":
+            self.button_text = "Выбрать"
+        else:
+            self.button_text = "Выбрано: "+self.file_name
+
+    def choose_new_file(self, master):
+        self.file_path = fd.askopenfilename(filetypes=[ 
+            ("data tables", "*.csv"),
+            ("excel tables", "*.xlsx")])
+        if self.file_path != '':
+            self.file_ext = os.path.splitext(self.file_path)[1]
+            self.file_name = os.path.basename(self.file_path)
+            if len(self.file_name)>20: self.file_name = self.file_name[:10]+"..."
+            self.file_choose_button.configure(text = "Выбрано: "+self.file_name)
+            master.master.master.config_data['FILE_SAVE_SETTINGS']['file_direction'] = self.file_path
+            config.set_config(master.master.master)
+
+    def save_to_file(self):
+        if self.data_source_button.get()=="Заполненная форма": 
+            self.data = None 
+            self.data_source='form'
+        if self.data_source_button.get()=="История парсинга": 
+            self.data=db.Database().get_all_history() 
+            self.data_source='parser_history'
+        if self.data_source_button.get()=="Записи парсера": 
+            self.data=db.Database().get_parse()
+            self.data_source='parsed'
+        if self.data_source_button.get()=="Временная база": 
+            self.data=db.Database().get_temp()
+            self.data_source='temporary'
+        if self.data_source_button.get()=="Локальная база": 
+            self.data=db.Database().get_ref()
+            self.data_source='reference'
+        if self.file_ext=='.csv': db.add_to_csv(self.file_path, self.data, self.data_source)
+        self.destroy()
 
 if __name__ == "__main__":
     app = App()

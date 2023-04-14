@@ -74,6 +74,10 @@ def set_config(master):
     
     for key in master.config_data['SEARCH_SETTINGS'].keys():
         config.set('SEARCH_SETTINGS', key, master.config_data['SEARCH_SETTINGS'][key])
+    
+    for key in master.config_data['FILE_SAVE_SETTINGS'].keys():
+        config.set('FILE_SAVE_SETTINGS', key, master.config_data['FILE_SAVE_SETTINGS'][key])
+    
     with open(path, "w") as config_file:
         config.write(config_file)
 

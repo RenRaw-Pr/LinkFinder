@@ -1,5 +1,6 @@
 import sqlite3 as sl
 import pandas as pd
+import os
 
 # Для базы данных
 class Database():
@@ -99,6 +100,16 @@ class Database():
         self.connect.commit()
         return(res)
 
+    def get_all_history(self):
+        self.curs.execute(
+        """
+        SELECT * FROM SEARCH_HISTORY
+        """)
+        
+        res = self.curs.fetchall()
+        self.connect.commit()
+        return(res)
+    
     # ДЛЯ ЗАПИСЕЙ ИЗ ДОКУМЕНТОВ ----- структура: (code, name, price, price_unit, unit, url, screenshot)
     def add_reference(self, data):
         self.curs.execute(
@@ -240,6 +251,7 @@ def get_csv(path):
     data.dropna(axis=1, how='all', inplace=True)
     return data
 
+# создание временной базы данных из csv
 def create_temporary_database_from_csv(data, index_tuple):
     database = Database()
     database.delete_temporary()
@@ -310,16 +322,36 @@ def create_temporary_database_from_csv(data, index_tuple):
     
     database.close_connection()
 
-# функции для добавления создания файла из базы данных
+# функции для создания файла из базы данных
 def create_csv(path, data, data_source):
     # Обрабатываем тип заголовка для данных:
     if data_source in ["form", "temporary", "parsed", "reference"]:
         columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота"]
     if data_source in ["parser_history"]:
         columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота", "Номер запроса"]
-    # Запись в файл
     data = pd.DataFrame(data, columns=columns)
-    with open(path, 'w') as f: data.to_csv(f, index=False)
+    # проверка имени файла
+    counter=0
+    new_path=path
+    while os.path.exists(new_path):
+        new_path = path[:-4]+"_"+str(counter)+path[-4:]
+        counter += 1
+    with open(new_path, 'w') as f: data.to_csv(f, index=False)
+
+def create_json(path, data, data_source):
+    # Обрабатываем тип заголовка для данных:
+    if data_source in ["form", "temporary", "parsed", "reference"]:
+        columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота"]
+    if data_source in ["parser_history"]:
+        columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота", "Номер запроса"]
+    data = pd.DataFrame(data, columns=columns)
+    # проверка имени файла
+    counter=0
+    new_path=path
+    while os.path.exists(new_path):
+        new_path = path[:-5]+"_"+str(counter)+path[-5:]
+        counter += 1
+    data.to_json(new_path, orient='records')
 
 # функции для добавления данных в уже существующий файл
 def add_to_csv(path, data, data_source):
