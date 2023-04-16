@@ -13,6 +13,7 @@ import webbrowser
 
 from Libs import Config_func as config
 from Libs import Data_func as db
+from Libs import Parse_func as pf
 
 import pandas as  pd
 
@@ -122,10 +123,13 @@ class Search(customtkinter.CTkFrame):
         self.symbols_font = customtkinter.CTkFont("Avenir Next", 16, 'normal')
         self.hover_color = ('#B0AFB1','#515152')
 
+        self.check_last_search()
         self.entry = customtkinter.CTkEntry(self, placeholder_text=None,
+                                            textvariable=customtkinter.StringVar(value=self.search_text),
                                             height=30,
                                             corner_radius=8, border_width=1)
         self.entry.pack(side=tkinter.LEFT, expand=True, fill='x', padx=5, pady=5)
+        #self.entry.focus_set()
 
         self.clear_button = customtkinter.CTkButton(self, 
                                                     height=30, width=30,
@@ -144,16 +148,23 @@ class Search(customtkinter.CTkFrame):
                                                     compound="right",
                                                     text="Найти",
                                                     text_color='#0267A7',
-                                                    command=None)
+                                                    command=lambda: self.serch_process())
         self.search_button.pack(side=tkinter.RIGHT, padx=(0, 5), pady=5)
         
         master.bind('<Return>', lambda event : self.clear())
     
+    def check_last_search(self):
+        self.search_text = self.master.config_data['SEARCH_SETTINGS']['search_text']
+
     def clear(self):
         self.entry.delete("0", tkinter.END)
+        self.master.config_data['SEARCH_SETTINGS']['search_text'] = ''
+        config.set_config(self.master)
 
     def serch_process(self):
-        pass
+        self.search_text = self.entry.get()
+        self.master.config_data['SEARCH_SETTINGS']['search_text'] = self.search_text
+        config.set_config(self.master)
 
 # Класс виджета окна результатов и сохранения в файл / class of result frame
 class Result_and_save(tkinter.PanedWindow):
@@ -500,6 +511,7 @@ class Options(customtkinter.CTkToplevel):
         self.title('| Настройки | Options |')
         self.geometry(f"{master.OPT_WIDTH}x{master.OPT_HEIGHT}+{int(master.X_OPT)}+{int(master.Y_OPT)}")
         self.resizable(width=False, height=False)
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
         self.labels_font = customtkinter.CTkFont("Avenir Next", 14, 'normal')
@@ -527,7 +539,6 @@ class Options(customtkinter.CTkToplevel):
                                                     height=30,
                                                     corner_radius=10)
         self.frame_default.pack(padx=[5,10], pady=[5,10], side='bottom', fill='both')
-
 
         self.save_button = customtkinter.CTkButton(self.frame_save, 
                                                     width=(master.OPT_WIDTH-30)/2-10, 
@@ -617,6 +628,19 @@ class Options(customtkinter.CTkToplevel):
                                         step_size=1, count_system='int',
                                         minimum=2, maximum=6)
         self.counter_2l.grid(row=7, column=0, padx=5, pady=[0,5])
+
+        self.label_4l = customtkinter.CTkLabel(self.frame_left,
+                                                width=(master.OPT_WIDTH-30)/2-20,
+                                                height=20,
+                                                text="Количесвто ссылок для парсинга\nв одном запросе",
+                                                font=self.labels_font)
+        self.label_4l.grid(row=8, column=0, padx=5, pady=[0,5])
+        
+        self.counter_3l = FloatSpinbox(self.frame_left, start=master.config_data['SEARCH_SETTINGS']['url_search_count'],
+                                        width=(master.OPT_WIDTH-30)/2-20,
+                                        step_size=1, count_system='int',
+                                        minimum=1, maximum=30)
+        self.counter_3l.grid(row=9, column=0, padx=5, pady=[0,5])
         
         self.keyboard_bind()
 
@@ -626,8 +650,10 @@ class Options(customtkinter.CTkToplevel):
     def save_button_func(self):
         self.master.config_data['SEARCH_SETTINGS']['history_limit'] = str(self.counter_1l.get())
         self.master.config_data['SEARCH_SETTINGS']['scale'] = str(self.counter_2l.get())
+        self.master.config_data['SEARCH_SETTINGS']['url_search_count'] = str(self.counter_3l.get())
         config.set_config(self.master)
         self.master.refresh_by_config()
+        self.master.focus_force()
         self.destroy()
     
     def delete_history_button_func(self, master):
@@ -659,12 +685,17 @@ class Options(customtkinter.CTkToplevel):
         config.return_to_default(self.master)
         config.set_config(self.master)
         self.master.refresh_by_config()
+        self.master.focus_force()
         self.destroy()
 
     def keyboard_bind(self):
         self.bind('<Control-s>', lambda event : self.save_button_func())
         self.bind('<Control-d>', lambda event : self.default_button_func())
         self.bind('<Control-q>', lambda event : self.destroy())
+
+    def on_closing(self, event=0):
+        self.master.focus_force()
+        self.destroy()
 
 # Класс модуля в окне результатов
 class Info_module(customtkinter.CTkFrame):
@@ -846,21 +877,27 @@ class FloatSpinbox(customtkinter.CTkFrame):
             self.entry.insert(0, str(float(value)))
 
     def is_valid(self, newval):
-        if (float(newval)<=self.maximum) and (float(newval)>=self.minimum):
-            if self.count_system=='int':
-                self.entry.insert(0, str(int(newval)))
-            if self.count_system=='float':
-                self.entry.insert(0, str(float(newval)))
-            return True
+        if newval != "":
+            if (float(newval)<=self.maximum) and (float(newval)>=self.minimum):
+                if self.count_system=='int':
+                    self.entry.insert(0, str(int(newval)))
+                if self.count_system=='float':
+                    self.entry.insert(0, str(float(newval)))
+                return True
+            else:
+                if float(newval)>=self.maximum:
+                    value=self.maximum
+                if float(newval)<=self.minimum:
+                    value=self.minimum
+                if self.count_system=='int':
+                    self.entry.insert(0, str(int(value)))
+                if self.count_system=='float':
+                    self.entry.insert(0, str(float(value)))
         else:
-            if float(newval)>=self.maximum:
-                value=self.maximum
-            if float(newval)<=self.minimum:
-                value=self.minimum
             if self.count_system=='int':
-                self.entry.insert(0, str(int(value)))
+                self.entry.insert(0, str(self.minimum))
             if self.count_system=='float':
-                self.entry.insert(0, str(float(value)))
+                self.entry.insert(0, str(self.minimum))
 
 # Окно просмотра csv файла
 class View_CSV(customtkinter.CTkToplevel):

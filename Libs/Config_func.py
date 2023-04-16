@@ -25,6 +25,9 @@ def create_config():
     config.set('SEARCH_SETTINGS', 'symbols', 'False')
     config.set('SEARCH_SETTINGS', 'only_nums', 'False')
 
+    config.set('SEARCH_SETTINGS', 'search_text', '')
+    config.set('SEARCH_SETTINGS', 'url_search_count', '10')
+
     config.add_section('FILE_SAVE_SETTINGS')
     # используется при создании файла
     config.set('FILE_SAVE_SETTINGS', 'file_format', 'csv') # xlsx, csv, json
