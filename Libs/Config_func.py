@@ -18,8 +18,11 @@ def create_config():
     config.set('SEARCH_SETTINGS', 'scale', '4')
     
     config.set('SEARCH_SETTINGS', 'using_parser', 'False')
+    config.set('SEARCH_SETTINGS', 'last_used_parser', 'False')
     config.set('SEARCH_SETTINGS', 'using_database', 'False')
+    config.set('SEARCH_SETTINGS', 'last_used_database', 'False')
     config.set('SEARCH_SETTINGS', 'using_temporary', 'False')
+    config.set('SEARCH_SETTINGS', 'last_used_temporary', 'False')
 
     config.set('SEARCH_SETTINGS', 'caps', 'False')
     config.set('SEARCH_SETTINGS', 'symbols', 'False')

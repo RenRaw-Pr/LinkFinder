@@ -21,9 +21,10 @@ def get_urls(search_term, url_max_count):
         if len(res) >= url_max_count:
             break
     return res
+
 '''
 for num, elem in enumerate(get_urls("Компрессорно конденсаторный блок NSK 060", 20)):
-    print(num ,elem)
+    print(num ,elem, end=' ')
     try:
         response = req.get(elem, timeout=1)
         soup = BeautifulSoup(response.text, "html.parser")
@@ -33,6 +34,7 @@ for num, elem in enumerate(get_urls("Компрессорно конденсат
         text = list(filter(None, text))
         
         print("Connected")
+
     except req.exceptions.Timeout: print("Timeout")
     except req.exceptions.ConnectionError: print("Lost connection")
 '''

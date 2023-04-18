@@ -45,6 +45,7 @@ class Database():
         UNIT TEXT NOT NULL,
         URL_ADRESS TEXT,
         SCREENSHOT BLOB,
+        SEARCH_SOURCE TEXT NOT NULL,
         NUM INTEGER NOT NULL);
         """)
         self.connect.commit()
@@ -52,7 +53,7 @@ class Database():
     def close_connection(self):
         self.connect.close()
     
-    # ДЛЯ ИСТОРИИ ------------------- структура: (code, name, price, price_unit, unit, url, screenshot, num)
+    # ДЛЯ ИСТОРИИ ------------------- структура: (code, name, price, price_unit, unit, url, screenshot, source, num)
     def delete_history(self):
         self.curs.execute(
         "DELETE FROM SEARCH_HISTORY;")
@@ -69,7 +70,7 @@ class Database():
         self.curs.execute(
         """   
         INSERT INTO SEARCH_HISTORY VALUES
-        (?,?,?,?,?,?,?,?);
+        (?,?,?,?,?,?,?,?,?);
         """, data)
         
         self.connect.commit()
@@ -84,7 +85,7 @@ class Database():
             self.curs.execute(
             """   
             INSERT INTO SEARCH_HISTORY VALUES
-            (?,?,?,?,?,?,?,?);
+            (?,?,?,?,?,?,?,?,?);
             """, elem)
 
         self.connect.commit()
@@ -245,6 +246,7 @@ class Database():
         self.connect.commit()
         return(res)
     
+    # ДЛЯ ЗАПИСИ ОБЩИХ РЕЗУЛЬТАТОВ ПОСЛНЕДНЕГО ПОИСКА ----------- структура: ()
 # функция для создания временной базы данных из файла
 def get_csv(path):
     data = pd.read_csv(path, sep=';')
@@ -328,7 +330,7 @@ def create_csv(path, data, data_source):
     if data_source in ["form", "temporary", "parsed", "reference"]:
         columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота"]
     if data_source in ["parser_history"]:
-        columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота", "Номер запроса"]
+        columns = ["Прайс лист", "Название", "Цена", "Валюта", "Ед. изм.", "URl-ссылка", "№ скриншота", "Источник данных", "Номер запроса"]
     data = pd.DataFrame(data, columns=columns)
     # проверка имени файла
     counter=0
