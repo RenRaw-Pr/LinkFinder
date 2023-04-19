@@ -21,7 +21,7 @@ class Database():
         CREATE TABLE IF NOT EXISTS PARSE_RESULTS
         (CODE TEXT,
         NAME TEXT NOT NULL,
-        PRICE REAL NOT NULL,
+        PRICE REAL,
         PRICE_UNIT TEXT NOT NULL,
         UNIT TEXT NOT NULL,
         URL_ADRESS TEXT NOT NULL,
@@ -29,9 +29,9 @@ class Database():
         DATE TEXT NOT NULL);
 
         CREATE TABLE IF NOT EXISTS TEMPORARY_DB
-        (CODE TEXT NOT NULL,
+        (CODE TEXT,
         NAME TEXT NOT NULL,
-        PRICE REAL NOT NULL,
+        PRICE REAL,
         PRICE_UNIT TEXT NOT NULL,
         UNIT TEXT NOT NULL,
         URL_ADRESS TEXT ,
@@ -45,6 +45,7 @@ class Database():
         UNIT TEXT NOT NULL,
         URL_ADRESS TEXT,
         SCREENSHOT BLOB,
+        DATE TEXT,
         SEARCH_SOURCE TEXT NOT NULL,
         NUM INTEGER NOT NULL);
         """)
@@ -53,29 +54,37 @@ class Database():
     def close_connection(self):
         self.connect.close()
 
-    # ДЛЯ ИСТОРИИ ------------------- структура: (code, name, price, price_unit, unit, url, screenshot, source, num)
+    # ДЛЯ ИСТОРИИ ------------------- структура: (code, name, price, price_unit, unit, url, screenshot, date, source, num)
     def delete_history(self):
         self.curs.execute(
         "DELETE FROM SEARCH_HISTORY;")
         
         self.connect.commit()
 
-    def add_history(self, data, maximum):
+    def add_history(self, data, maximum, source):
         self.curs.executescript(
         f"""
         UPDATE SEARCH_HISTORY SET NUM = NUM+1;
         DELETE FROM SEARCH_HISTORY WHERE NUM>{maximum};
         """)
-        
+        self.curs.execute(
+        """   
+        SELECT DATETIME('now');
+        """)
+        time = self.curs.fetchall()
+        data = list(data)
+        data.append(time[0][0])
+        data.append(source)
+        data.append(1)
         self.curs.execute(
         """   
         INSERT INTO SEARCH_HISTORY VALUES
-        (?,?,?,?,?,?,?,?,?);
+        (?,?,?,?,?,?,?,?,?,?);
         """, data)
         
         self.connect.commit()
 
-    def add_history_series(self, data, maximum):
+    def add_history_series(self, data, maximum, source):
         self.curs.executescript(
         f"""
         UPDATE SEARCH_HISTORY SET NUM = NUM+1;
@@ -84,8 +93,17 @@ class Database():
         for elem in data:
             self.curs.execute(
             """   
+            SELECT DATETIME('now');
+            """)
+            time = self.curs.fetchall()
+            elem = list(elem)
+            elem.append(time[0][0])
+            elem.append(source)
+            elem.append(1)
+            self.curs.execute(
+            """   
             INSERT INTO SEARCH_HISTORY VALUES
-            (?,?,?,?,?,?,?,?,?);
+            (?,?,?,?,?,?,?,?,?,?);
             """, elem)
 
         self.connect.commit()
@@ -258,7 +276,6 @@ class Database():
         self.connect.commit()
         return(res)
     
-    # ДЛЯ ЗАПИСИ ОБЩИХ РЕЗУЛЬТАТОВ ПОСЛНЕДНЕГО ПОИСКА ----------- структура: ()
 # функция для создания временной базы данных из файла
 def get_csv(path):
     data = pd.read_csv(path, sep=';')

@@ -1,5 +1,7 @@
 import os
 import io
+import pyperclip
+
 from typing import Union, Callable
 
 from PIL import Image
@@ -14,7 +16,6 @@ import webbrowser
 from Libs import Config_func as config
 from Libs import Data_func as db
 from Libs import Parse_func as pf
-from Libs import Search_func as se
 
 import pandas as  pd
 
@@ -27,7 +28,7 @@ class App(customtkinter.CTk):
 
         self.title('| LinkFinder v 0.1.0.5 |')
         self.geometry(f"{self.APP_WIDTH}x{self.APP_HEIGHT}+{int(self.X_APP)}+{int(self.Y_APP)}")
-        self.minsize(240,480)
+        self.minsize(1100,480)
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Размещаем элементы главного окна
@@ -78,7 +79,7 @@ class App(customtkinter.CTk):
         self.search_frame = Search(self)
         self.search_frame.pack(side=tkinter.TOP, fill='x', padx=5, pady=5)
         
-        self.result_and_save_frame = Result_and_save(self, update=False)
+        self.result_and_save_frame = Result_and_save(self, update_data=False)
         self.result_and_save_frame.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True, padx=5, pady=5)
     
     # Функция закрытия приложения / app closing function
@@ -208,6 +209,7 @@ class Options_list(customtkinter.CTkFrame):
         self.width = 230
         self.hover_color = ('#B0AFB1','#515152')
         self.symbols_font = customtkinter.CTkFont("Avenir Next", 16, 'normal')
+        self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
 
         def settings():
             self.opt = Options(master.master)
@@ -224,11 +226,18 @@ class Options_list(customtkinter.CTkFrame):
         self.button_1.pack(padx=[5,0], pady=5, side="left")
         
         self.button_2 = customtkinter.CTkButton(self,
-                                                height=30, width=self.width-50,
+                                                height=30, width=(self.width-50)/2,
                                                 corner_radius=8, border_width=1,
                                                 border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
-                                                text='')
-        self.button_2.pack(padx=5, pady=5, side="left", fill='x')
+                                                text='Запрос', font=self.buttons_font)
+        self.button_2.pack(padx=[5,0], pady=5, side="left")
+
+        self.button_3 = customtkinter.CTkButton(self,
+                                                height=30, width=(self.width-50)/2,
+                                                corner_radius=8, border_width=1,
+                                                border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
+                                                text='Обр. файла', font=self.buttons_font)
+        self.button_3.pack(padx=[5,0], pady=5, side="left")
 
 # Класс виджета настроек поиска / search settings widget class
 class Search_options(customtkinter.CTkFrame):
@@ -402,7 +411,7 @@ class Result_data(customtkinter.CTkFrame):
                     self.parse_label.pack(padx=5, pady=0,fill='x')
                     self.parse_boxes = []
                     for key in range(len(parse)):
-                        self.parse_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.parse[key], data_type="parse").pack(padx=5, pady=5, fill='x'))
+                        self.parse_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], parse[key], data_type="parse").pack(padx=5, pady=5, fill='x'))
                 else:
                     self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
                                                                 text="Парсинг не дал результатов",
@@ -419,7 +428,7 @@ class Result_data(customtkinter.CTkFrame):
                     self.base_label.pack(padx=5, pady=0, fill='x')
                     self.base_boxes = []
                     for key in range(len(self.base_data)):
-                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.base[key], data_type="ref").pack(padx=5, pady=5, fill='x'))
+                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], base[key], data_type="ref").pack(padx=5, pady=5, fill='x'))
                 else:
                     self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
                                                                 text="Поиск по базе не дал результатов",
@@ -436,7 +445,7 @@ class Result_data(customtkinter.CTkFrame):
                     self.parse_label.pack(padx=5, pady=0,fill='x')
                     self.temporary_boxes = []
                     for key in range(len(self.temporary_data)):
-                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.temporary[key], data_type="temp").pack(padx=5, pady=5, fill='x'))
+                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], temporary[key], data_type="temp").pack(padx=5, pady=5, fill='x'))
                 else:
                     self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
                                                                 text="Поиск по временной базе не дал результатов",
@@ -452,9 +461,9 @@ class Result_data(customtkinter.CTkFrame):
                 self.warning_label.pack(padx=5, pady=0, fill='x')
 
         if update == False:
-            parse = db.Database().get_history(0)[0]
-            base = db.Database().get_history(0)[1]
-            temporary = db.Database().get_history(0)[2]
+            parse = db.Database().get_history(1)[0]
+            base = db.Database().get_history(1)[1]
+            temporary = db.Database().get_history(1)[2]
             if master.master.config_data['SEARCH_SETTINGS']['last_used_parser']=='True':
                 if parse != []:
                     self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
@@ -464,7 +473,7 @@ class Result_data(customtkinter.CTkFrame):
                     self.parse_label.pack(padx=5, pady=0,fill='x')
                     self.parse_boxes = []
                     for key in range(len(parse)):
-                        self.parse_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.parse[key], data_type="parse").pack(padx=5, pady=5, fill='x'))
+                        self.parse_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], parse[key], data_type="parse").pack(padx=5, pady=5, fill='x'))
                 else:
                     self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
                                                                 text="В предыдущий раз парсинг не дал результатов",
@@ -481,7 +490,7 @@ class Result_data(customtkinter.CTkFrame):
                     self.base_label.pack(padx=5, pady=0, fill='x')
                     self.base_boxes = []
                     for key in range(len(self.base_data)):
-                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.base[key], data_type="ref").pack(padx=5, pady=5, fill='x'))
+                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], base[key], data_type="ref").pack(padx=5, pady=5, fill='x'))
                 else:
                     self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
                                                                 text="В предыдущий раз поиск по базе не дал результатов",
@@ -498,7 +507,7 @@ class Result_data(customtkinter.CTkFrame):
                     self.parse_label.pack(padx=5, pady=0,fill='x')
                     self.temporary_boxes = []
                     for key in range(len(self.temporary_data)):
-                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.temporary[key], data_type="temp").pack(padx=5, pady=5, fill='x'))
+                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], temporary[key], data_type="temp").pack(padx=5, pady=5, fill='x'))
                 else:
                     self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
                                                                 text="В предыдущий раз поиск по временной базе не дал результатов",
@@ -801,7 +810,8 @@ class Info_module(customtkinter.CTkFrame):
 
         self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
         self.url_font = customtkinter.CTkFont("Avenir Next", 12, 'normal', 'italic', underline=True)
-        if data[5]==None:
+        
+        if data[6]==None:
             self.screenshot_image = customtkinter.CTkImage(light_image = Image.open("./Design/Light_image_default.png"),
                                                            dark_image = Image.open("./Design/Dark_image_default.png"), size=(192,108))
 
@@ -810,7 +820,7 @@ class Info_module(customtkinter.CTkFrame):
                                                         cursor='sizing')
             self.screenshot_label.grid(padx=5, pady=5, row=0, column=0, rowspan=4)
         else:
-            self.screenshot_image = customtkinter.CTkImage(Image.open(io.BytesIO(data[5])), size=(192,108))
+            self.screenshot_image = customtkinter.CTkImage(Image.open(io.BytesIO(data[6])), size=(192,108))
 
             self.screenshot_label = customtkinter.CTkLabel(self, width=202, height=118, fg_color=('#C2C2C2','#5A5A5A'), corner_radius=5,
                                                         text='', image=self.screenshot_image,
@@ -818,29 +828,38 @@ class Info_module(customtkinter.CTkFrame):
             self.screenshot_label.grid(padx=5, pady=5, row=0, column=0, rowspan=4)
             self.screenshot_label.bind("<Button-1>", lambda e: self.open_view(int(scale), data, image=data[5]))
 
-        self.name_label = customtkinter.CTkLabel(self, height=20, text=data[0],
+        self.name_label = customtkinter.CTkLabel(self, height=20, text=data[1],
                                                  anchor='w',
                                                  font=self.labels_font)
         self.name_label.grid(padx=5, pady=10, row=0, column=1, columnspan=2, sticky="NW")
-
-        self.price_label = customtkinter.CTkLabel(self, height=20, text="Стоимость: "+ str(data[1]) +" "+data[2],
-                                                 anchor='w',
-                                                 font=self.labels_font)
+        self.name_label.bind("<Button-1>", lambda e: pyperclip.copy(data[1]))
+        
+        if data[2]!=None:
+            self.price_label = customtkinter.CTkLabel(self, height=20, text="Стоимость: "+ f"{data[2]:_.2f}".replace("_"," ") +" "+data[3],
+                                                    anchor='w',
+                                                    font=self.labels_font)
+            self.price_label.bind("<Button-1>", lambda e: pyperclip.copy(data[2]))
+        if data[2]==None:
+            self.price_label = customtkinter.CTkLabel(self, height=20, text="Стоимость не указана",
+                                                    anchor='w',
+                                                    font=self.labels_font)
+            self.price_label.bind("<Button-1>", lambda e: pyperclip.copy("Стоимость не указана"))
         self.price_label.grid(padx=5, pady=5, row=1, column=1, sticky="NW")
 
-        self.unit_label = customtkinter.CTkLabel(self, height=20, text="Единица измерения: "+data[3],
+        self.unit_label = customtkinter.CTkLabel(self, height=20, text="Единица измерения: "+data[4],
                                                  anchor='w',
                                                  font=self.labels_font)
         self.unit_label.grid(padx=5, pady=5, row=1, column=2, sticky="NW")
+        self.unit_label.bind("<Button-1>", lambda e: pyperclip.copy(data[4]))
 
-        self.url_label = customtkinter.CTkLabel(self, height=20, text="Ссылка на ресурс: "+data[4],
+        self.url_label = customtkinter.CTkLabel(self, height=20, text="Ссылка на ресурс: "+data[5],
                                                  anchor='w',
                                                  font=self.url_font)
         self.url_label.grid(padx=5, pady=5, row=2, column=1, columnspan=2, sticky="NW")
-        self.url_label.bind("<Button-1>", lambda e: self.clicked_url(data[4]))
+        self.url_label.bind("<Button-1>", lambda e: self.clicked_url(data[5]))
 
         if data_type=='parse':
-            self.date_label = customtkinter.CTkLabel(self, height=20, text="Информация актуальна на: "+data[6],
+            self.date_label = customtkinter.CTkLabel(self, height=20, text="Информация актуальна на: "+data[7],
                                                  anchor='w',
                                                  font=self.labels_font)
             self.date_label.grid(padx=5, row=3, column=1, columnspan=2, sticky="NW")
@@ -856,7 +875,7 @@ class Info_module(customtkinter.CTkFrame):
             self.image_view.resizable(width=False, height=False)
             self.image_view.attributes('-topmost', 'true')
 
-            self.image_view.image = customtkinter.CTkImage(Image.open(io.BytesIO(data[5])), size=(192*scale,108*scale))
+            self.image_view.image = customtkinter.CTkImage(Image.open(io.BytesIO(data[6])), size=(192*scale,108*scale))
             self.image_view.image_label = customtkinter.CTkLabel(self.image_view, width=192*scale+2, height=108*scale+2,
                                                                     text='', image=self.image_view.image,
                                                                     cursor = 'sizing')
