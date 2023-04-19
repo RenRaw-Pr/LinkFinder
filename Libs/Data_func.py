@@ -52,7 +52,7 @@ class Database():
 
     def close_connection(self):
         self.connect.close()
-    
+
     # ДЛЯ ИСТОРИИ ------------------- структура: (code, name, price, price_unit, unit, url, screenshot, source, num)
     def delete_history(self):
         self.curs.execute(
@@ -94,12 +94,24 @@ class Database():
         self.curs.execute(
         """
         SELECT * FROM SEARCH_HISTORY
-        WHERE NUM = ?
+        WHERE NUM = ? AND SEARCH_SOURCE = "parse"
         """,(num,))
         
-        res = self.curs.fetchall()
+        parse = self.curs.fetchall()
+        self.curs.execute(
+        """
+        SELECT * FROM SEARCH_HISTORY
+        WHERE NUM = ? AND SEARCH_SOURCE = "database"
+        """,(num,))
+        database = self.curs.fetchall()
+        self.curs.execute(
+        """
+        SELECT * FROM SEARCH_HISTORY
+        WHERE NUM = ? AND SEARCH_SOURCE = "temporary"
+        """,(num,))
+        temporary = self.curs.fetchall()
         self.connect.commit()
-        return(res)
+        return([parse, database, temporary])
 
     def get_all_history(self):
         self.curs.execute(

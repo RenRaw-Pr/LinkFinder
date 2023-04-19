@@ -78,7 +78,7 @@ class App(customtkinter.CTk):
         self.search_frame = Search(self)
         self.search_frame.pack(side=tkinter.TOP, fill='x', padx=5, pady=5)
         
-        self.result_and_save_frame = Result_and_save(self)
+        self.result_and_save_frame = Result_and_save(self, update=False)
         self.result_and_save_frame.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True, padx=5, pady=5)
     
     # Функция закрытия приложения / app closing function
@@ -92,7 +92,7 @@ class App(customtkinter.CTk):
         self.bind('<Control-o>', lambda event : Options(self))
     
     # Функция обновления параметров / refresh app with new config parametres
-    def refresh_by_config(self):
+    def refresh_by_config(self, upd_type='update_config'):
         config.set_config(self)
         customtkinter.set_appearance_mode(self.config_data['USER_SETTINGS']['theme'])
         
@@ -104,9 +104,14 @@ class App(customtkinter.CTk):
         self.search_frame = Search(self)
         self.search_frame.pack(side=tkinter.TOP, fill='x', padx=5, pady=5)
         
-        self.result_and_save_frame.destroy()
-        self.result_and_save_frame = Result_and_save(self)
-        self.result_and_save_frame.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True, padx=5, pady=5)
+        if upd_type == 'update_data':
+            self.result_and_save_frame.destroy()
+            self.result_and_save_frame = Result_and_save(self, update_data=True)
+            self.result_and_save_frame.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True, padx=5, pady=5)
+        if upd_type == 'update_config':
+            self.result_and_save_frame.destroy()
+            self.result_and_save_frame = Result_and_save(self, update_data=False)
+            self.result_and_save_frame.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True, padx=5, pady=5)
         
 #============================================================================================================
 # Класс основной левой группы виджетов / class of left frame
@@ -168,24 +173,24 @@ class Search(customtkinter.CTkFrame):
             self.master.config_data['SEARCH_SETTINGS']['search_text'] = self.search_text
             
             if self.master.config_data['SEARCH_SETTINGS']['using_parser']=='True':
-                self.master.config_data['SEARCH_SETTINGS']['last_used_parser']=='True'
-            else: self.master.config_data['SEARCH_SETTINGS']['last_used_parser']=='False'
+                self.master.config_data['SEARCH_SETTINGS']['last_used_parser']='True'
+            else: self.master.config_data['SEARCH_SETTINGS']['last_used_parser']='False'
             
             if self.master.config_data['SEARCH_SETTINGS']['using_database']=='True':
-                self.master.config_data['SEARCH_SETTINGS']['last_used_database']=='True'
-            else: self.master.config_data['SEARCH_SETTINGS']['last_used_database']=='False'
+                self.master.config_data['SEARCH_SETTINGS']['last_used_database']='True'
+            else: self.master.config_data['SEARCH_SETTINGS']['last_used_database']='False'
             
             if self.master.config_data['SEARCH_SETTINGS']['using_temporary']=='True':
-                self.master.config_data['SEARCH_SETTINGS']['last_used_temporary']=='True'
-            else: self.master.config_data['SEARCH_SETTINGS']['last_used_temporary']=='False'
+                self.master.config_data['SEARCH_SETTINGS']['last_used_temporary']='True'
+            else: self.master.config_data['SEARCH_SETTINGS']['last_used_temporary']='False'
             
             config.set_config(self.master)
 
 # Класс виджета окна результатов и сохранения в файл / class of result frame
 class Result_and_save(tkinter.PanedWindow):
-    def __init__(self, master):
+    def __init__(self, master, update_data=False):
         super().__init__ (master, orient='vertical', bg=master.cget('bg'), borderwidth=0, sashwidth=10)
-        self.data = Result_data(self)
+        self.data = Result_data(self, update=update_data)
         self.data.pack(side = tkinter.TOP)
         self.add(self.data)
         self.save = Save_to_file(self)
@@ -362,9 +367,8 @@ class Save_options(customtkinter.CTkFrame):
 
 # Класс виджета вывода данных / result data frame class
 class Result_data(customtkinter.CTkFrame):
-    def __init__(self, master, parse=[], base=[], temporary=[]):
+    def __init__(self, master, parse=[], base=[], temporary=[], update=False):
         super().__init__(master, height=400, corner_radius=10)
-        
         if master.master.config_data['USER_SETTINGS']['theme']=='Dark':
             self.info_bg_color = "#2B2B2B"
         if master.master.config_data['USER_SETTINGS']['theme']=='Light':
@@ -386,65 +390,128 @@ class Result_data(customtkinter.CTkFrame):
         self.infobox.configure(yscrollcommand=self.scrollbar.set)
         
         self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
-        #размещение инфобоксов и заголовков
         
-        if master.master.config_data['SEARCH_SETTINGS']['using_parser']=='True':
-            if parse != []:
-                self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
-                                                            text="Результаты парсинга:",
-                                                            font=self.labels_font,
-                                                            anchor='w')
-                self.parse_label.pack(padx=5, pady=0,fill='x')
-                self.parse_boxes = []
-                for key in range(len(parse)):
-                    self.parse_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.parse[key], data_type="parse").pack(padx=5, pady=5, fill='x'))
-            else:
-                self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
-                                                            text="Парсинг не дал результатов",
-                                                            font=self.labels_font,
-                                                            anchor='w')
-                self.parse_label.pack(padx=5, pady=0,fill='x')
+        #размещение инфобоксов и заголовков в случае обновления вывода данных
+        if update == True:
+            if master.master.config_data['SEARCH_SETTINGS']['last_used_parser']=='True':
+                if parse != []:
+                    self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Результаты парсинга:",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.parse_label.pack(padx=5, pady=0,fill='x')
+                    self.parse_boxes = []
+                    for key in range(len(parse)):
+                        self.parse_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.parse[key], data_type="parse").pack(padx=5, pady=5, fill='x'))
+                else:
+                    self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Парсинг не дал результатов",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.parse_label.pack(padx=5, pady=0,fill='x')
 
-        if master.master.config_data['SEARCH_SETTINGS']['using_database']=='True':
-            if base != []:
-                self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
-                                                            text="Результаты поиска по базе:",
-                                                            font=self.labels_font,
-                                                            anchor='w')
-                self.base_label.pack(padx=5, pady=0, fill='x')
-                self.base_boxes = []
-                for key in range(len(self.base_data)):
-                    self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.base[key], data_type="ref").pack(padx=5, pady=5, fill='x'))
-            else:
-                self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
-                                                            text="Поиск по базе не дал результатов",
-                                                            font=self.labels_font,
-                                                            anchor='w')
-                self.base_label.pack(padx=5, pady=0, fill='x')
-                
-        if master.master.config_data['SEARCH_SETTINGS']['using_temporary']=='True':
-            if temporary != []:
-                self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
-                                                            text="Результаты поиска по временной базе:",
-                                                            font=self.labels_font,
-                                                            anchor='w')
-                self.parse_label.pack(padx=5, pady=0,fill='x')
-                self.temporary_boxes = []
-                for key in range(len(self.temporary_data)):
-                    self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.temporary[key], data_type="temp").pack(padx=5, pady=5, fill='x'))
-            else:
-                self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
-                                                            text="Поиск по временной базе не дал результатов",
-                                                            font=self.labels_font,
-                                                            anchor='w')
-                self.parse_label.pack(padx=5, pady=0,fill='x')
-        
-        if master.master.config_data['SEARCH_SETTINGS']['using_parser']=='False' and master.master.config_data['SEARCH_SETTINGS']['using_database']=='False' and master.master.config_data['SEARCH_SETTINGS']['using_temporary']=='False':
-            self.warning_label = customtkinter.CTkLabel(self.infobox, height=20,
-                                                            text="Отключены все параметры поиска",
-                                                            font=self.labels_font,
-                                                            anchor='center')
-            self.warning_label.pack(padx=5, pady=0, fill='x')
+            if master.master.config_data['SEARCH_SETTINGS']['last_used_database']=='True':
+                if base != []:
+                    self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Результаты поиска по базе:",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.base_label.pack(padx=5, pady=0, fill='x')
+                    self.base_boxes = []
+                    for key in range(len(self.base_data)):
+                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.base[key], data_type="ref").pack(padx=5, pady=5, fill='x'))
+                else:
+                    self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Поиск по базе не дал результатов",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.base_label.pack(padx=5, pady=0, fill='x')
+                    
+            if master.master.config_data['SEARCH_SETTINGS']['last_used_temporary']=='True':
+                if temporary != []:
+                    self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Результаты поиска по временной базе:",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.parse_label.pack(padx=5, pady=0,fill='x')
+                    self.temporary_boxes = []
+                    for key in range(len(self.temporary_data)):
+                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.temporary[key], data_type="temp").pack(padx=5, pady=5, fill='x'))
+                else:
+                    self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Поиск по временной базе не дал результатов",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.parse_label.pack(padx=5, pady=0,fill='x')
+            
+            if master.master.config_data['SEARCH_SETTINGS']['last_used_parser']=='False' and master.master.config_data['SEARCH_SETTINGS']['last_used_database']=='False' and master.master.config_data['SEARCH_SETTINGS']['last_used_temporary']=='False':
+                self.warning_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Отключены все параметры поиска",
+                                                                font=self.labels_font,
+                                                                anchor='center')
+                self.warning_label.pack(padx=5, pady=0, fill='x')
+
+        if update == False:
+            parse = db.Database().get_history(0)[0]
+            base = db.Database().get_history(0)[1]
+            temporary = db.Database().get_history(0)[2]
+            if master.master.config_data['SEARCH_SETTINGS']['last_used_parser']=='True':
+                if parse != []:
+                    self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Результаты парсинга:",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.parse_label.pack(padx=5, pady=0,fill='x')
+                    self.parse_boxes = []
+                    for key in range(len(parse)):
+                        self.parse_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.parse[key], data_type="parse").pack(padx=5, pady=5, fill='x'))
+                else:
+                    self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="В предыдущий раз парсинг не дал результатов",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.parse_label.pack(padx=5, pady=0,fill='x')
+
+            if master.master.config_data['SEARCH_SETTINGS']['last_used_database']=='True':
+                if base != []:
+                    self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Результаты поиска по базе:",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.base_label.pack(padx=5, pady=0, fill='x')
+                    self.base_boxes = []
+                    for key in range(len(self.base_data)):
+                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.base[key], data_type="ref").pack(padx=5, pady=5, fill='x'))
+                else:
+                    self.base_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="В предыдущий раз поиск по базе не дал результатов",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.base_label.pack(padx=5, pady=0, fill='x')
+                    
+            if master.master.config_data['SEARCH_SETTINGS']['last_used_temporary']=='True':
+                if temporary != []:
+                    self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Результаты поиска по временной базе:",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.parse_label.pack(padx=5, pady=0,fill='x')
+                    self.temporary_boxes = []
+                    for key in range(len(self.temporary_data)):
+                        self.base_boxes.append(Info_module(self.infobox, master.master.config_data["SEARCH_SETTINGS"]["scale"], self.temporary[key], data_type="temp").pack(padx=5, pady=5, fill='x'))
+                else:
+                    self.parse_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="В предыдущий раз поиск по временной базе не дал результатов",
+                                                                font=self.labels_font,
+                                                                anchor='w')
+                    self.parse_label.pack(padx=5, pady=0,fill='x')
+            
+            if master.master.config_data['SEARCH_SETTINGS']['last_used_parser']=='False' and master.master.config_data['SEARCH_SETTINGS']['last_used_database']=='False' and master.master.config_data['SEARCH_SETTINGS']['last_used_temporary']=='False':
+                self.warning_label = customtkinter.CTkLabel(self.infobox, height=20,
+                                                                text="Были отключены все параметры поиска",
+                                                                font=self.labels_font,
+                                                                anchor='center')
+                self.warning_label.pack(padx=5, pady=0, fill='x')
 
 # Класс виджета сохранения данных в файл / save to file format frame class
 class Save_to_file(customtkinter.CTkFrame):
@@ -452,7 +519,7 @@ class Save_to_file(customtkinter.CTkFrame):
         super().__init__(master, corner_radius=10)
 
 #============================================================================================================
-# Классы для создания дополнительных окон     
+# Классы для создания дополнительных окон
 # Класс уведомлений [cl = 'warning', 'info', 'error'] / messange class [cl = 'warning', 'info', 'error']
 class Messange(customtkinter.CTkToplevel):
     def __init__(self, parent, master, cl, title, msg, skip_button=None, confirm_button=None, decline_button=None, confirm_button_function=None):
