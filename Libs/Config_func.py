@@ -30,6 +30,7 @@ def create_config():
 
     config.set('SEARCH_SETTINGS', 'search_text', '')
     config.set('SEARCH_SETTINGS', 'url_search_count', '10')
+    config.set('SEARCH_SETTINGS', 'result_type_sort', 'price')
 
     config.add_section('FILE_SAVE_SETTINGS')
     # используется при создании файла

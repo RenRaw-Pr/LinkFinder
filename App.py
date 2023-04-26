@@ -165,27 +165,30 @@ class Search(customtkinter.CTkFrame):
 
     def clear(self):
         self.entry.delete("0", tkinter.END)
-        self.master.config_data['SEARCH_SETTINGS']['search_text'] = ''
-        config.set_config(self.master)
+        #self.master.config_data['SEARCH_SETTINGS']['search_text'] = ''
+        #config.set_config(self.master)
 
     def serch_process(self):
         self.search_text = self.entry.get()
-        if self.search_text != '':
-            self.master.config_data['SEARCH_SETTINGS']['search_text'] = self.search_text
+        self.master.config_data['SEARCH_SETTINGS']['search_text'] = self.search_text.strip()
+
+        if self.master.config_data['SEARCH_SETTINGS']['using_parser']=='True':
+            self.master.config_data['SEARCH_SETTINGS']['last_used_parser']='True'
+        else: self.master.config_data['SEARCH_SETTINGS']['last_used_parser']='False'
             
-            if self.master.config_data['SEARCH_SETTINGS']['using_parser']=='True':
-                self.master.config_data['SEARCH_SETTINGS']['last_used_parser']='True'
-            else: self.master.config_data['SEARCH_SETTINGS']['last_used_parser']='False'
-            
-            if self.master.config_data['SEARCH_SETTINGS']['using_database']=='True':
-                self.master.config_data['SEARCH_SETTINGS']['last_used_database']='True'
-            else: self.master.config_data['SEARCH_SETTINGS']['last_used_database']='False'
-            
-            if self.master.config_data['SEARCH_SETTINGS']['using_temporary']=='True':
-                self.master.config_data['SEARCH_SETTINGS']['last_used_temporary']='True'
-            else: self.master.config_data['SEARCH_SETTINGS']['last_used_temporary']='False'
-            
-            config.set_config(self.master)
+        if self.master.config_data['SEARCH_SETTINGS']['using_database']=='True':
+            self.master.config_data['SEARCH_SETTINGS']['last_used_database']='True'
+        else: self.master.config_data['SEARCH_SETTINGS']['last_used_database']='False'
+        
+        if self.master.config_data['SEARCH_SETTINGS']['using_temporary']=='True':
+            self.master.config_data['SEARCH_SETTINGS']['last_used_temporary']='True'
+        else: self.master.config_data['SEARCH_SETTINGS']['last_used_temporary']='False'
+        config.set_config(self.master)
+        
+        if self.search_text.strip():
+            pass
+        else:
+            pass
 
 # Класс виджета окна результатов и сохранения в файл / class of result frame
 class Result_and_save(tkinter.PanedWindow):
@@ -378,27 +381,22 @@ class Save_options(customtkinter.CTkFrame):
 class Result_data(customtkinter.CTkFrame):
     def __init__(self, master, parse=[], base=[], temporary=[], update=False):
         super().__init__(master, height=400, corner_radius=10)
-        if master.master.config_data['USER_SETTINGS']['theme']=='Dark':
-            self.info_bg_color = "#2B2B2B"
-        if master.master.config_data['USER_SETTINGS']['theme']=='Light':
-            self.info_bg_color = "#DBDBDB"
-
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        # Размещение скроллбара и фрейма с информацией
-
-        self.infobox = tkinter.Canvas(self, bg=self.info_bg_color,  highlightthickness=0)
-        self.infobox.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-
-        self.scrollbar = customtkinter.CTkScrollbar(self, orientation="vertical",
-                                                    width=15, corner_radius=5, border_spacing=2,
-                                                    minimum_pixel_length=30,
-                                                    hover=True,
-                                                    command=self.infobox.yview)
-        self.scrollbar.grid(row=0, column=1, padx=5, pady=5, sticky="ns")
-        self.infobox.configure(yscrollcommand=self.scrollbar.set)
-        
         self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
+
+        self.sort_label = customtkinter.CTkLabel(self, text="Способ сортировки результатов: ", font=self.labels_font,
+                                                 height=25)
+        self.sort_label.grid(column=0, row=0, padx=5, pady=[5,0], sticky="n")
+
+        self.sort_type_menu = customtkinter.CTkOptionMenu(self,
+                                                          width=50, height=25,
+                                                          values=config.mix_values(("name", "price"), 
+                                                                                   self.master.master.config_data['SEARCH_SETTINGS']['result_type_sort']))
+
+        # Размещение скроллбара и фрейма с информацией
+        self.infobox = customtkinter.CTkScrollableFrame(self)
+        self.infobox.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
         
         #размещение инфобоксов и заголовков в случае обновления вывода данных
         if update == True:
@@ -522,6 +520,8 @@ class Result_data(customtkinter.CTkFrame):
                                                                 anchor='center')
                 self.warning_label.pack(padx=5, pady=0, fill='x')
 
+    def check_sort_type(self):
+        pass
 # Класс виджета сохранения данных в файл / save to file format frame class
 class Save_to_file(customtkinter.CTkFrame):
     def __init__(self, master):
