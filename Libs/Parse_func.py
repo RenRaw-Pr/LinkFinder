@@ -1,8 +1,16 @@
 import requests as req
 from bs4 import BeautifulSoup
+import multiprocessing as mp
+
 
 # функция для получения url - адресов возможных сайтов
 def get_urls(search_term, url_max_count):
+    _cancel_list = [
+        "webcache",
+        "https://support.google.com/",
+        "https://accounts.google.com/",
+        "https://www.youtube.com/"
+    ]
     res = []
     url = "https://www.google.com/search?q=" + search_term
     PAGES_COUNT = url_max_count//10 + 2
@@ -14,7 +22,11 @@ def get_urls(search_term, url_max_count):
             if href.startswith("/url?q="):
                 href = href.replace("/url?q=", "")
                 href = href.split("&")[0]
-                if "webcache" not in href and "https://support.google.com/" not in href and "https://accounts.google.com/" not in href:
+                tag=True
+                for cancel in _cancel_list:
+                    if cancel in href:
+                        tag=False 
+                if tag==True:
                     res.append(href)
                     if len(res) >= url_max_count:    # остановка поиска после достижения нужного количества результатов
                         break
@@ -22,20 +34,26 @@ def get_urls(search_term, url_max_count):
             break
     return res
 
-'''
-for num, elem in enumerate(get_urls("Компрессорно конденсаторный блок NSK 060", 20)):
-    print(num ,elem, end=' ')
+def analyze_url(url):
     try:
-        response = req.get(elem, timeout=1)
+        response = req.get(url, timeout=1)
         soup = BeautifulSoup(response.text, "html.parser")
         text = list(soup.get_text().splitlines())
         for i in range(len(text)):
             text[i] = text[i].replace('\xa0', '').replace('\t', '').replace("  ","")
         text = list(filter(None, text))
         
-        print("Connected")
+        return "Connected"
 
-    except req.exceptions.Timeout: print("Timeout")
-    except req.exceptions.ConnectionError: print("Lost connection")
-'''
-# функция для проверки сайта по его url - адресу
+    except req.exceptions.Timeout: return "Timeout"
+    except req.exceptions.ConnectionError: return "Lost connection"
+
+class Search_process():
+    def __init__(self, progress_queue):
+        self.progress_queue = progress_queue
+    
+    def run(self, search_term, url_max_count, step):
+        for num, elem in enumerate(get_urls(search_term, url_max_count)):
+            progress = num
+            self.progress_queue.put(progress)
+            print(num, elem, analyze_url(elem))

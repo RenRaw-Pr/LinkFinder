@@ -1,6 +1,7 @@
 import os
 import io
 import pyperclip
+import multiprocessing as mp
 
 from typing import Union, Callable
 
@@ -45,6 +46,7 @@ class App(customtkinter.CTk):
         self.config_data = config.get_config()
         #(применяем сохраненную конфигурацию)
         customtkinter.set_appearance_mode(self.config_data['USER_SETTINGS']['theme'])
+        customtkinter.set_default_color_theme(self.config_data['USER_SETTINGS']['color_theme'])
 
         self.text_colors = ("#FFFAFA")
 
@@ -96,6 +98,7 @@ class App(customtkinter.CTk):
     def refresh_by_config(self, upd_type='update_config'):
         config.set_config(self)
         customtkinter.set_appearance_mode(self.config_data['USER_SETTINGS']['theme'])
+        customtkinter.set_default_color_theme(self.config_data['USER_SETTINGS']['color_theme'])
         
         self.left_main_frame.destroy()
         self.left_main_frame = Left_main(self)
@@ -128,7 +131,6 @@ class Search(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master, height=40, corner_radius=10, bg_color="transparent")       
         self.symbols_font = customtkinter.CTkFont("Avenir Next", 16, 'normal')
-        self.hover_color = ('#B0AFB1','#515152')
 
         self.check_last_search()
         self.entry = customtkinter.CTkEntry(self, placeholder_text=None,
@@ -136,13 +138,11 @@ class Search(customtkinter.CTkFrame):
                                             height=30,
                                             corner_radius=8, border_width=1)
         self.entry.pack(side=tkinter.LEFT, expand=True, fill='x', padx=5, pady=5)
-        #self.entry.focus_set()
 
         self.clear_button = customtkinter.CTkButton(self, 
                                                     height=30, width=30,
-                                                    corner_radius=8, border_width=1,
-                                                    border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
-                                                    text="\u2715", text_color='#0267A7',
+                                                    corner_radius=8,
+                                                    text="\u2715",
                                                     command=self.clear)
         self.clear_button.pack(side=tkinter.LEFT, padx=(0, 5), pady=5)
         
@@ -150,11 +150,9 @@ class Search(customtkinter.CTkFrame):
         
         self.search_button = customtkinter.CTkButton(self, 
                                                     height=30, width=40,
-                                                    corner_radius=8, border_width=1,
-                                                    border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
+                                                    corner_radius=8,
                                                     compound="right",
                                                     text="Найти",
-                                                    text_color='#0267A7',
                                                     command=lambda: self.serch_process())
         self.search_button.pack(side=tkinter.RIGHT, padx=(0, 5), pady=5)
         
@@ -186,9 +184,30 @@ class Search(customtkinter.CTkFrame):
         config.set_config(self.master)
         
         if self.search_text.strip():
-            pass
+            if self.master.config_data['SEARCH_SETTINGS']['using_parser']=='True':
+                # Расчет шага для отметки событий
+                self.step = 1/(int(self.master.config_data['SEARCH_SETTINGS']['url_search_count'])+2)
+                
+                self.master.result_and_save_frame.data.progress_bar.set(self.step)
+                self.master.result_and_save_frame.data.progess_state_label.configure(text=f"| {int(100*self.master.result_and_save_frame.data.progress_bar.get())}% | Запущен процесс парсинга")
+                self.progress_queue = mp.Queue()
+                self.search_process = self.update_progress_state(self.progress_queue)
+                self.main_process = mp.Process(target=self.search_process.run,
+                                            args=(self.search_text.strip(),
+                                                    int(self.master.config_data['SEARCH_SETTINGS']['url_search_count']),
+                                                    self.step,))
+                self.main_process.start()
+                self.update_progress_state(self.progress_queue)
+
         else:
             pass
+
+    def update_progress_state(self, progress_queue):
+        if not progress_queue.empty():
+            self.progress = progress_queue.get()
+            self.master.result_and_save_frame.data.progress_bar.set(self.step*(self.progress+2))
+            self.master.result_and_save_frame.data.progess_state_label.configure(text=f"| {int(100*self.master.result_and_save_frame.data.progress_bar.get())}% | Обработано ссылок: {self.progress+1} из {int(self.master.config_data['SEARCH_SETTINGS']['url_search_count'])}")
+        self.master.after(1, self.update_progress_state, progress_queue)
 
 # Класс виджета окна результатов и сохранения в файл / class of result frame
 class Result_and_save(tkinter.PanedWindow):
@@ -208,9 +227,7 @@ class Result_and_save(tkinter.PanedWindow):
 class Options_list(customtkinter.CTkFrame):
     def __init__(self, master):
         super().__init__(master, height=40, corner_radius=10)
-        #self.settings_img = customtkinter.CTkImage(Image.open('./Design/icon-settings-outline.png'), size=(15,15))
         self.width = 230
-        self.hover_color = ('#B0AFB1','#515152')
         self.symbols_font = customtkinter.CTkFont("Avenir Next", 16, 'normal')
         self.buttons_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
 
@@ -218,27 +235,17 @@ class Options_list(customtkinter.CTkFrame):
             self.opt = Options(master.master)
             self.opt.grab_set()
 
-        self.button_1 = customtkinter.CTkButton(self, 
-                                                #image=self.settings_img,
-                                                height=30, width=30,
-                                                corner_radius=8, border_width=1,
-                                                border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
-                                                text="\u2699", font=self.symbols_font, text_color="#0267A7",                            
-                                                command=settings,
-                                                )
+        self.button_1 = customtkinter.CTkButton(self, height=30, width=30, corner_radius=8,
+                                                text="\u2699", font=self.symbols_font,                            
+                                                command=settings)
         self.button_1.pack(padx=[5,0], pady=5, side="left")
         
-        self.button_2 = customtkinter.CTkButton(self,
-                                                height=30, width=(self.width-50)/2,
-                                                corner_radius=8, border_width=1,
-                                                border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
+        self.button_2 = customtkinter.CTkButton(self, height=30, width=(self.width-50)/2, corner_radius=8,
                                                 text='Запрос', font=self.buttons_font)
         self.button_2.pack(padx=[5,0], pady=5, side="left")
 
         self.button_3 = customtkinter.CTkButton(self,
-                                                height=30, width=(self.width-50)/2,
-                                                corner_radius=8, border_width=1,
-                                                border_color='#0267A7', fg_color="transparent", bg_color="transparent", hover_color=self.hover_color,
+                                                height=30, width=(self.width-50)/2, corner_radius=8,
                                                 text='Обр. файла', font=self.buttons_font)
         self.button_3.pack(padx=[5,0], pady=5, side="left")
 
@@ -384,19 +391,49 @@ class Result_data(customtkinter.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.labels_font = customtkinter.CTkFont("Avenir Next", 12, 'normal')
+        self.progress_bar_font = customtkinter.CTkFont("Avenir Next", 9, 'normal')
 
-        self.sort_label = customtkinter.CTkLabel(self, text="Способ сортировки результатов: ", font=self.labels_font,
+        self._uncode_list = {"по имени (A -> Я)" : "ongoing_name", 
+                            "по имени (Я -> А)" : "offgoing_name", 
+                            "по цене (возрастание)" : "ongoing_price",
+                            "по цене (убывание)" : "offgoing_price"}
+
+        self.progress_frame = customtkinter.CTkFrame(self)
+        self.progress_frame.pack(padx=5, pady=[5,0], side='top', fill='x', expand=False)
+
+        self.progress_bar = customtkinter.CTkProgressBar(self.progress_frame, height=5, orientation="horizontal")
+        self.progress_bar.set(0)
+        self.progress_bar.pack(padx=5, pady=[5,0], side='top', fill='x', expand=False)
+
+        self.progess_state_label = customtkinter.CTkLabel(self.progress_frame, text="| Активные процессы парсинга отсутствуют", font=self.progress_bar_font, height=15,
+                                                          anchor='w')
+        self.progess_state_label.pack(padx=5, pady=[5,0], side='left', expand=False)
+        
+        self.stop_button = customtkinter.CTkButton(self.progress_frame, height=15, width=30,
+                                                    corner_radius=8,
+                                                    text="Остановить", font=self.progress_bar_font,
+                                                    command=None)
+        self.stop_button.pack(padx=5, pady=5, side='right', expand=False)
+
+        self.sort_frame = customtkinter.CTkFrame(self)
+        self.sort_frame.pack(padx=5, pady=[5,0], side='top', fill='x', expand=False)
+
+        self.sort_label = customtkinter.CTkLabel(self.sort_frame, text="Способ сортировки результатов: ", font=self.labels_font,
                                                  height=25)
-        self.sort_label.grid(column=0, row=0, padx=5, pady=[5,0], sticky="n")
+        self.sort_label.pack(padx=[5,0], pady=5, side='left')
 
-        self.sort_type_menu = customtkinter.CTkOptionMenu(self,
-                                                          width=50, height=25,
-                                                          values=config.mix_values(("name", "price"), 
-                                                                                   self.master.master.config_data['SEARCH_SETTINGS']['result_type_sort']))
-
+        self.check_sort_type()
+        self.sort_type_menu = customtkinter.CTkOptionMenu(self.sort_frame, width=250, height=25, dynamic_resizing=False,
+                                                            values=config.mix_values(("по имени (A -> Я)", 
+                                                                                      "по имени (Я -> А)", 
+                                                                                      "по цене (возрастание)",
+                                                                                      "по цене (убывание)"), self.sort_type_name),
+                                                            command=self.sort_values())
+        self.sort_type_menu.pack(padx=[5,0], pady=5, side='left')
+        
         # Размещение скроллбара и фрейма с информацией
         self.infobox = customtkinter.CTkScrollableFrame(self)
-        self.infobox.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+        self.infobox.pack(padx=5, pady=5, side='top', fill='both', expand=True)
         
         #размещение инфобоксов и заголовков в случае обновления вывода данных
         if update == True:
@@ -520,8 +557,14 @@ class Result_data(customtkinter.CTkFrame):
                                                                 anchor='center')
                 self.warning_label.pack(padx=5, pady=0, fill='x')
 
+
     def check_sort_type(self):
-        pass
+        self.sort_type_name = self.master.master.config_data['SEARCH_SETTINGS']['result_sort_type']
+        self.sort_type = self._uncode_list[self.sort_type_name]
+        
+    def sort_values(self):
+        self.master.master.config_data['SEARCH_SETTINGS']['result_sort_type'] = self.sort_type_name
+
 # Класс виджета сохранения данных в файл / save to file format frame class
 class Save_to_file(customtkinter.CTkFrame):
     def __init__(self, master):
@@ -678,6 +721,22 @@ class Options(customtkinter.CTkToplevel):
                                                         command=self.theme_button)
         self.optionmenu_1r.grid(row=1, column=0, padx=5, pady=0)
         
+        self.label_2r = customtkinter.CTkLabel(self.frame_right,
+                                                width=(master.OPT_WIDTH-30)/2-20,
+                                                height=20,
+                                                text="Цветовая тема:",
+                                                font=self.labels_font)
+        self.label_2r.grid(row=2, column=0, padx=5, pady=5)
+
+        self.optionmenu_2r = customtkinter.CTkOptionMenu(self.frame_right,
+                                                        width=(master.OPT_WIDTH-30)/2-20,
+                                                        height=25,
+                                                        values=config.mix_values(["blue", "dark-blue", "green"],
+                                                                                master.config_data['USER_SETTINGS']['color_theme']),
+                                                        font=self.buttons_font,
+                                                        command=self.color_theme_button)
+        self.optionmenu_2r.grid(row=3, column=0, padx=5, pady=0)
+
         self.label_1l = customtkinter.CTkLabel(self.frame_left,
                                                 width=(master.OPT_WIDTH-30)/2-20,
                                                 height=20,
@@ -753,6 +812,9 @@ class Options(customtkinter.CTkToplevel):
     def theme_button(self, value):
         self.master.config_data['USER_SETTINGS']['theme'] = value
     
+    def color_theme_button(self, value):
+        self.master.config_data['USER_SETTINGS']['color_theme'] = value
+
     def save_button_func(self):
         self.master.config_data['SEARCH_SETTINGS']['history_limit'] = str(self.counter_1l.get())
         self.master.config_data['SEARCH_SETTINGS']['scale'] = str(self.counter_2l.get())
@@ -1070,7 +1132,7 @@ class View_CSV(customtkinter.CTkToplevel):
             new_index_box = customtkinter.CTkOptionMenu(self.index_frame,
                                                         width=current_length, height=25, corner_radius=5,
                                                         values=[' -- ', 'Прайс-лист', 'Название', 'Цена', 'Ед. изм.', 'Гиперссылка'],
-                                                        font=self.buttons_font,
+                                                        font=self.buttons_font, dynamic_resizing=False,
                                                         command=None)
             new_index_box.pack(padx=0, pady=5, side='left')
             self.choose_index_boxes.append(new_index_box)

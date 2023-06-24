@@ -5,9 +5,9 @@ import os
 # Для базы данных
 class Database():
     def __init__(self):
-        self.connect = sl.connect("./Data/Save_data.db")
-        self.curs = self.connect.cursor()
-        self.curs.executescript(
+        self._connect = sl.connect("./Data/Save_data.db")
+        self._curs = self._connect.cursor()
+        self._curs.executescript(
         """
         CREATE TABLE IF NOT EXISTS REFERENCES_DB
         (CODE TEXT NOT NULL,
@@ -49,231 +49,231 @@ class Database():
         SEARCH_SOURCE TEXT NOT NULL,
         NUM INTEGER NOT NULL);
         """)
-        self.connect.commit()
+        self._connect.commit()
 
     def close_connection(self):
-        self.connect.close()
+        self._connect.close()
 
     # ДЛЯ ИСТОРИИ ------------------- структура: (code, name, price, price_unit, unit, url, screenshot, date, source, num)
     def delete_history(self):
-        self.curs.execute(
+        self._curs.execute(
         "DELETE FROM SEARCH_HISTORY;")
         
-        self.connect.commit()
+        self._connect.commit()
 
     def add_history(self, data, maximum, source):
-        self.curs.executescript(
+        self._curs.executescript(
         f"""
         UPDATE SEARCH_HISTORY SET NUM = NUM+1;
         DELETE FROM SEARCH_HISTORY WHERE NUM>{maximum};
         """)
-        self.curs.execute(
+        self._curs.execute(
         """   
         SELECT DATETIME('now');
         """)
-        time = self.curs.fetchall()
+        time = self._curs.fetchall()
         data = list(data)
         data.append(time[0][0])
         data.append(source)
         data.append(1)
-        self.curs.execute(
+        self._curs.execute(
         """   
         INSERT INTO SEARCH_HISTORY VALUES
         (?,?,?,?,?,?,?,?,?,?);
         """, data)
         
-        self.connect.commit()
+        self._connect.commit()
 
     def add_history_series(self, data, maximum, source):
-        self.curs.executescript(
+        self._curs.executescript(
         f"""
         UPDATE SEARCH_HISTORY SET NUM = NUM+1;
         DELETE FROM SEARCH_HISTORY WHERE NUM>{maximum};
         """)
         for elem in data:
-            self.curs.execute(
+            self._curs.execute(
             """   
             SELECT DATETIME('now');
             """)
-            time = self.curs.fetchall()
+            time = self._curs.fetchall()
             elem = list(elem)
             elem.append(time[0][0])
             elem.append(source)
             elem.append(1)
-            self.curs.execute(
+            self._curs.execute(
             """   
             INSERT INTO SEARCH_HISTORY VALUES
             (?,?,?,?,?,?,?,?,?,?);
             """, elem)
 
-        self.connect.commit()
+        self._connect.commit()
 
     def get_history(self, num):
-        self.curs.execute(
+        self._curs.execute(
         """
         SELECT * FROM SEARCH_HISTORY
         WHERE NUM = ? AND SEARCH_SOURCE = "parse"
         """,(num,))
         
-        parse = self.curs.fetchall()
-        self.curs.execute(
+        parse = self._curs.fetchall()
+        self._curs.execute(
         """
         SELECT * FROM SEARCH_HISTORY
         WHERE NUM = ? AND SEARCH_SOURCE = "database"
         """,(num,))
-        database = self.curs.fetchall()
-        self.curs.execute(
+        database = self._curs.fetchall()
+        self._curs.execute(
         """
         SELECT * FROM SEARCH_HISTORY
         WHERE NUM = ? AND SEARCH_SOURCE = "temporary"
         """,(num,))
-        temporary = self.curs.fetchall()
-        self.connect.commit()
+        temporary = self._curs.fetchall()
+        self._connect.commit()
         return([parse, database, temporary])
 
     def get_all_history(self):
-        self.curs.execute(
+        self._curs.execute(
         """
         SELECT * FROM SEARCH_HISTORY
         """)
         
-        res = self.curs.fetchall()
-        self.connect.commit()
+        res = self._curs.fetchall()
+        self._connect.commit()
         return(res)
     
     # ДЛЯ ЗАПИСЕЙ ИЗ ДОКУМЕНТОВ ----- структура: (code, name, price, price_unit, unit, url, screenshot)
     def add_reference(self, data):
-        self.curs.execute(
+        self._curs.execute(
         """   
         INSERT INTO REFERENCES_DB VALUES
         (?,?,?,?,?,?,?);
         """, data)
         
-        self.connect.commit()
+        self._connect.commit()
 
     def get_ref_by_name(self, name):
-        self.curs.execute(
+        self._curs.execute(
         """
         SELECT * FROM REFERENCES_DB WHERE NAME = ?
         """, (name,))
-        res = self.curs.fetchall()
-        self.connect.commit()
+        res = self._curs.fetchall()
+        self._connect.commit()
         return(res)
 
     def delete_reference(self):
-        self.curs.execute(
+        self._curs.execute(
         "DELETE FROM REFERENCES_DB;")
         
-        self.connect.commit()
+        self._connect.commit()
 
     def get_ref(self):
-        self.curs.execute(
+        self._curs.execute(
         """
         SELECT * FROM REFERENCES_DB
         """,)
 
-        res = self.curs.fetchall()
-        self.connect.commit()
+        res = self._curs.fetchall()
+        self._connect.commit()
         return(res)
 
    # ДЛЯ ВРЕМЕННОЙ БАЗЫ ИЗ ДОКУМЕНТА ----- структура: (code, name, price, price_unit, unit, url, screenshot)
     def add_temporary(self, data):
-        self.curs.execute(
+        self._curs.execute(
         """   
         INSERT INTO TEMPORARY_DB VALUES
         (?,?,?,?,?,?,?);
         """, data)
         
-        self.connect.commit()
+        self._connect.commit()
 
     def get_temp_by_name(self, name):
-        self.curs.execute(
+        self._curs.execute(
         """
         SELECT * FROM TEMPORARY_DB WHERE NAME = ?
         """, (name,))
-        res = self.curs.fetchall()
-        self.connect.commit()
+        res = self._curs.fetchall()
+        self._connect.commit()
         return(res)
 
     def delete_temporary(self):
-        self.curs.execute(
+        self._curs.execute(
         "DELETE FROM TEMPORARY_DB;")
         
-        self.connect.commit()
+        self._connect.commit()
 
     def get_temp(self):
-        self.curs.execute(
+        self._curs.execute(
         """
         SELECT * FROM TEMPORARY_DB
         """,)
 
-        res = self.curs.fetchall()
-        self.connect.commit()
+        res = self._curs.fetchall()
+        self._connect.commit()
         return(res)
     
     # ДЛЯ ЗАПИСЕЙ ПАРСЕРА ----------- структура: (code, name, price, price_unit, unit, url, screenshot, date)
     def add_parse(self, data):
-        self.curs.execute(
+        self._curs.execute(
         """   
         SELECT DATETIME('now');
         """)
-        time = self.curs.fetchall()
+        time = self._curs.fetchall()
         data = list(data)
         data.append(time[0][0])
         
-        self.curs.execute(
+        self._curs.execute(
         """   
         INSERT INTO PARSE_RESULTS VALUES
         (?,?,?,?,?,?,?,?);
         """, data)
         
-        self.connect.commit()
+        self._connect.commit()
 
     def get_parse_by_name(self, name, time_warning):
-        self.curs.execute(
+        self._curs.execute(
         """
         SELECT * FROM PARSE_RESULTS WHERE NAME = ?
         """, (name,))
-        res = self.curs.fetchall()
+        res = self._curs.fetchall()
         
         for elem in res:
-            self.curs.execute(
+            self._curs.execute(
             f"""
             SELECT STRFTIME('%s', 'now') - STRFTIME('%s', "{elem[-1]}");
             """)
-            time = self.curs.fetchall()
+            time = self._curs.fetchall()
             elem = list(elem)
             if int(time[0][0])/3600>time_warning:
                 elem.append(False)
             else:
                 elem.append(True)
 
-        self.connect.commit()
+        self._connect.commit()
         return(res)
 
     def update_parse_by_name(self, name, url, new_data):
-        self.curs.execute(
+        self._curs.execute(
         f"""
         UPDATE PARSE_RESULTS SET PRICE = {new_data[1]}, SCREENSHOT = "{new_data[2]}", DATE = DATETIME('now')
         WHERE NAME = "{name}" AND URL_ADRESS = "{url}";
         """)
         
-        self.connect.commit()
+        self._connect.commit()
 
     def delete_parse(self):
-        self.curs.execute(
+        self._curs.execute(
         "DELETE FROM PARSE_RESULTS;")
         
-        self.connect.commit()
+        self._connect.commit()
 
     def get_parse(self):
-        self.curs.execute(
+        self._curs.execute(
         """
         SELECT * FROM PARSE_RESULTS
         """,)
 
-        res = self.curs.fetchall()
-        self.connect.commit()
+        res = self._curs.fetchall()
+        self._connect.commit()
         return(res)
     
 # функция для создания временной базы данных из файла

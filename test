@@ -1,0 +1,51 @@
+import tkinter as tk
+import customtkinter as ctk
+import multiprocessing as mp
+import time
+
+class LongProcess:
+    def __init__(self, progress_queue):
+        self.progress_queue = progress_queue
+        
+    def run(self):
+        # Долгий процесс, в котором регулярно передается прогресс выполнения в очередь
+        for i in range(10):
+            # Рассчитываем прогресс выполнения
+            progress = (i + 1) * 10
+            # Передаем прогресс выполнения в очередь
+            self.progress_queue.put(progress)
+            # Имитируем задержку
+            time.sleep(1)
+
+class Gui:
+    def __init__(self, root):
+        self.root = root
+        self.progressbar = ctk.CTkProgressBar(self.root)
+        self.progressbar.pack()
+        self.start_button = tk.Button(self.root, text="Start", command=self.start_process)
+        self.start_button.pack()
+        
+    def start_process(self):
+        # Создаем очередь для передачи прогресса выполнения
+        progress_queue = mp.Queue()
+        # Запускаем долгий процесс в отдельном процессе
+        long_process = LongProcess(progress_queue)
+        process = mp.Process(target=long_process.run)
+        process.start()
+        # Регулярно получаем прогресс выполнения из очереди и обновляем progressbar
+        self.update_progress(progress_queue)
+        
+    def update_progress(self, progress_queue):
+        # Получаем значение прогресса выполнения из очереди
+        if not progress_queue.empty():
+            
+            progress = progress_queue.get()
+            # Обновляем progressbar
+            self.progressbar["value"] = progress
+        # Повторяем обновление спустя 500 мс
+        self.root.after(500, self.update_progress, progress_queue)
+        
+if __name__ == "__main__":
+    root = tk.Tk()
+    gui = Gui(root)
+    root.mainloop()

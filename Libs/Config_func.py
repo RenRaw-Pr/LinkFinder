@@ -6,10 +6,12 @@ def create_config():
     path = './Data/settings.ini'
     config = configparser.ConfigParser()
     config.add_section('DEFAULT_SETTINGS')
-    config.set('DEFAULT_SETTINGS', 'Theme', 'Dark')
+    config.set('DEFAULT_SETTINGS', 'theme', 'Dark')
+    config.set('DEFAULT_SETTINGS', 'color_theme', 'blue')
 
     config.add_section('USER_SETTINGS')
-    config.set('USER_SETTINGS', 'Theme', '')
+    config.set('USER_SETTINGS', 'theme', 'Dark')
+    config.set('USER_SETTINGS', 'color_theme', 'blue')
     
     config.add_section('SEARCH_SETTINGS')
     config.set('SEARCH_SETTINGS', 'temporary_base', '')
@@ -30,7 +32,7 @@ def create_config():
 
     config.set('SEARCH_SETTINGS', 'search_text', '')
     config.set('SEARCH_SETTINGS', 'url_search_count', '10')
-    config.set('SEARCH_SETTINGS', 'result_type_sort', 'price')
+    config.set('SEARCH_SETTINGS', 'result_sort_type', 'по цене (возрастание)')
 
     config.add_section('FILE_SAVE_SETTINGS')
     # используется при создании файла
