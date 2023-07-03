@@ -1,7 +1,7 @@
 import os
 import io
 import pyperclip
-import multiprocessing as mp
+#import multiprocessing as mp
 
 from typing import Union, Callable
 
@@ -27,7 +27,7 @@ class App(customtkinter.CTk):
         self.params()
         self.find_center()
 
-        self.title('| LinkFinder v 0.1.0.5 |')
+        self.title(f'| LinkFinder version {self.VERSION} |')
         self.geometry(f"{self.APP_WIDTH}x{self.APP_HEIGHT}+{int(self.X_APP)}+{int(self.Y_APP)}")
         self.minsize(1100,480)
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -50,6 +50,7 @@ class App(customtkinter.CTk):
 
         self.text_colors = ("#FFFAFA")
 
+        self.VERSION = '0.1.1.0'
         self.APP_WIDTH = 780
         self.APP_HEIGHT = 480
 
@@ -184,6 +185,7 @@ class Search(customtkinter.CTkFrame):
         config.set_config(self.master)
         
         if self.search_text.strip():
+            '''
             if self.master.config_data['SEARCH_SETTINGS']['using_parser']=='True':
                 # Расчет шага для отметки событий
                 self.step = 1/(int(self.master.config_data['SEARCH_SETTINGS']['url_search_count'])+2)
@@ -198,16 +200,18 @@ class Search(customtkinter.CTkFrame):
                                                     self.step,))
                 self.main_process.start()
                 self.update_progress_state(self.progress_queue)
-
+            '''
+            print('Search started')
         else:
             pass
-
+    '''
     def update_progress_state(self, progress_queue):
         if not progress_queue.empty():
             self.progress = progress_queue.get()
             self.master.result_and_save_frame.data.progress_bar.set(self.step*(self.progress+2))
             self.master.result_and_save_frame.data.progess_state_label.configure(text=f"| {int(100*self.master.result_and_save_frame.data.progress_bar.get())}% | Обработано ссылок: {self.progress+1} из {int(self.master.config_data['SEARCH_SETTINGS']['url_search_count'])}")
         self.master.after(1, self.update_progress_state, progress_queue)
+    '''
 
 # Класс виджета окна результатов и сохранения в файл / class of result frame
 class Result_and_save(tkinter.PanedWindow):
@@ -397,7 +401,7 @@ class Result_data(customtkinter.CTkFrame):
                             "по имени (Я -> А)" : "offgoing_name", 
                             "по цене (возрастание)" : "ongoing_price",
                             "по цене (убывание)" : "offgoing_price"}
-
+        '''
         self.progress_frame = customtkinter.CTkFrame(self)
         self.progress_frame.pack(padx=5, pady=[5,0], side='top', fill='x', expand=False)
 
@@ -414,7 +418,7 @@ class Result_data(customtkinter.CTkFrame):
                                                     text="Остановить", font=self.progress_bar_font,
                                                     command=None)
         self.stop_button.pack(padx=5, pady=5, side='right', expand=False)
-
+        '''
         self.sort_frame = customtkinter.CTkFrame(self)
         self.sort_frame.pack(padx=5, pady=[5,0], side='top', fill='x', expand=False)
 
@@ -556,7 +560,6 @@ class Result_data(customtkinter.CTkFrame):
                                                                 font=self.labels_font,
                                                                 anchor='center')
                 self.warning_label.pack(padx=5, pady=0, fill='x')
-
 
     def check_sort_type(self):
         self.sort_type_name = self.master.master.config_data['SEARCH_SETTINGS']['result_sort_type']

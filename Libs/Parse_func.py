@@ -1,7 +1,5 @@
 import requests as req
 from bs4 import BeautifulSoup
-import multiprocessing as mp
-
 
 # функция для получения url - адресов возможных сайтов
 def get_urls(search_term, url_max_count):
@@ -34,26 +32,29 @@ def get_urls(search_term, url_max_count):
             break
     return res
 
-def analyze_url(url):
+def analyze_url(url, search_term, compare=0.8):
     try:
         response = req.get(url, timeout=1)
         soup = BeautifulSoup(response.text, "html.parser")
-        text = list(soup.get_text().splitlines())
-        for i in range(len(text)):
-            text[i] = text[i].replace('\xa0', '').replace('\t', '').replace("  ","")
-        text = list(filter(None, text))
-        
-        return "Connected"
+        # Получение текста
+        text = soup.get_text().replace('\n', '').replace('\xa0', '').replace('\t', '').replace("  ","")
+        # Сравнение с запросом
+        text_words = text.split()
+        term_words = search_term.split()
+        matching_words = sum(1 for word in term_words if word in text_words)
+        if matching_words / len(term_words) > compare:
+            return "Connected", f"Compare > {compare*100}% Sucess"
+        else:
+            return "Connected", f"Compare < {compare*100}% Error"
 
     except req.exceptions.Timeout: return "Timeout"
     except req.exceptions.ConnectionError: return "Lost connection"
 
-class Search_process():
-    def __init__(self, progress_queue):
-        self.progress_queue = progress_queue
-    
-    def run(self, search_term, url_max_count, step):
-        for num, elem in enumerate(get_urls(search_term, url_max_count)):
-            progress = num
-            self.progress_queue.put(progress)
-            print(num, elem, analyze_url(elem))
+
+
+
+
+
+
+for num, url in enumerate(get_urls("Компрессорно-конденсаторный блок NSK 060", 10)):
+    print(num, url, analyze_url(url, "Компрессорно-конденсаторный блок NSK 060"))
